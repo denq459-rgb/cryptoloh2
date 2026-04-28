@@ -3,13 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PRO Scalp Scanner</title>
+  <title>PRO Scalper AI</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <style>
     :root { --bg: #0a0e17; --card: #151924; --green: #00ffaa; --red: #ff3355; --blue: #0088cc; }
     body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; }
     .container { max-width: 500px; margin: auto; }
-    h1 { text-align: center; font-size: 24px; margin-bottom: 20px; }
     
     .scanner-box { 
       background: var(--card); 
@@ -17,75 +16,46 @@
       padding: 20px; 
       border: 1px solid #333; 
       text-align: center; 
-      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
     }
 
-    #preview { 
-      width: 100%; 
-      border-radius: 10px; 
-      margin: 15px 0; 
-      display: none; 
-      border: 2px solid #333; 
-    }
+    #preview { width: 100%; border-radius: 10px; margin: 15px 0; display: none; border: 1px solid #444; }
 
     .btn { 
       background: linear-gradient(45deg, #0088cc, #004466); 
-      border: none; 
-      padding: 18px 30px; 
-      border-radius: 15px; 
-      color: white; 
-      font-weight: bold; 
-      cursor: pointer; 
-      width: 100%; 
-      font-size: 16px;
-      transition: 0.3s;
+      border: none; padding: 18px; border-radius: 15px; 
+      color: white; font-weight: bold; cursor: pointer; width: 100%; font-size: 16px;
     }
-    .btn:active { transform: scale(0.95); }
 
-    .signal-display { font-size: 48px; font-weight: 800; margin: 20px 0; min-height: 60px; }
+    .signal-display { font-size: 42px; font-weight: 800; margin: 20px 0; min-height: 50px; }
     
     .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
-    .stat-item { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 12px; font-size: 14px; }
+    .stat-item { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 12px; font-size: 13px; }
     .stat-item b { display: block; font-size: 18px; margin-top: 5px; color: var(--blue); }
 
-    #reason { margin-top: 20px; color: #aaa; font-size: 14px; line-height: 1.4; font-style: italic; }
+    #reason { margin-top: 20px; color: #aaa; font-size: 14px; line-height: 1.4; }
 
     /* Анимация загрузки */
-    .loading-dots:after {
-      content: ' .';
-      animation: dots 1.5s steps(5, end) infinite;
-    }
-    @keyframes dots {
-      0%, 20% { color: rgba(0,0,0,0); text-shadow: .25em 0 0 rgba(0,0,0,0), .5em 0 0 rgba(0,0,0,0); }
-      40% { color: white; text-shadow: .25em 0 0 rgba(0,0,0,0), .5em 0 0 rgba(0,0,0,0); }
-      60% { text-shadow: .25em 0 0 white, .5em 0 0 rgba(0,0,0,0); }
-      80%, 100% { text-shadow: .25em 0 0 white, .5em 0 0 white; }
-    }
+    .loading-dots:after { content: ' .'; animation: dots 1.5s steps(5, end) infinite; }
+    @keyframes dots { 0%, 20% { color: rgba(0,0,0,0); text-shadow: .25em 0 0 rgba(0,0,0,0), .5em 0 0 rgba(0,0,0,0); } 40% { color: white; text-shadow: .25em 0 0 rgba(0,0,0,0), .5em 0 0 rgba(0,0,0,0); } 60% { text-shadow: .25em 0 0 white, .5em 0 0 rgba(0,0,0,0); } 80%, 100% { text-shadow: .25em 0 0 white, .5em 0 0 white; } }
   </style>
 </head>
 <body>
 
 <div class="container">
-  <h1>📡 PRO Scalper AI</h1>
+  <h1 style="text-align:center">📡 PRO Scalper AI</h1>
   
   <div class="scanner-box">
-    <!-- Скрытый инпут -->
     <input type="file" id="fileInput" accept="image/*" style="display:none">
-    
-    <button class="btn" id="mainBtn" onclick="document.getElementById('fileInput').click()">
-      📸 ВЫБРАТЬ ГРАФИК
-    </button>
+    <button class="btn" onclick="document.getElementById('fileInput').click()">📸 ВЫБРАТЬ ГРАФИК</button>
 
     <img id="preview">
     
     <div id="result" style="display:none">
       <div class="signal-display" id="signalText">АНАЛИЗ</div>
-      
       <div class="stats">
         <div class="stat-item">Точность<br><b id="conf">-</b></div>
         <div class="stat-item">Экспирация<br><b id="exp">-</b></div>
       </div>
-      
       <p id="reason"></p>
     </div>
   </div>
@@ -93,7 +63,13 @@
 
 <script>
   const tg = window.Telegram.WebApp;
-  tg.expand(); // Раскрыть на весь экран
+  tg.expand();
+
+  // !!! ИНСТРУКЦИЯ: !!!
+  // 1. Запусти ngrok: ngrok http 8000
+  // 2. Скопируй ссылку https://....ngrok-free.app
+  // 3. Вставь её ниже в переменную DOMAIN (без слеша в конце)
+  const DOMAIN = "https://ВАШ-АДРЕС-ИЗ-NGROK.ngrok-free.app"; 
 
   const fileInput = document.getElementById('fileInput');
   const preview = document.getElementById('preview');
@@ -108,62 +84,62 @@
     reader.onload = function(event) {
       preview.src = event.target.result;
       preview.style.display = 'block';
-      
-      // Сразу запускаем анализ после выбора фото
       analyzeImage(event.target.result);
     };
     reader.readAsDataURL(file);
   };
 
   async function analyzeImage(base64Data) {
-    // Подготовка интерфейса
     result.style.display = 'block';
     signalText.innerText = "АНАЛИЗ";
     signalText.className = "signal-display loading-dots";
-    signalText.style.color = "white";
-    document.getElementById('reason').innerText = "Искусственный интеллект изучает структуру рынка...";
+    document.getElementById('reason').innerText = "Подключение к нейросети...";
 
     try {
-      // !!! ВАЖНО: ЗАМЕНИТЕ ЭТУ ССЫЛКУ НА ВАШ URL ОТ NGROK (ОБЯЗАТЕЛЬНО HTTPS)
-      const SERVER_URL = "https://ВАШ_АДРЕС.ngrok-free.app/analyze-base64/";
+      // Проверка адреса
+      if (DOMAIN.includes("ВАШ-АДРЕС")) {
+        throw new Error("Вы не указали адрес в переменной DOMAIN! Замените его на адрес из ngrok.");
+      }
 
-      const response = await fetch(SERVER_URL, {
+      const response = await fetch(`${DOMAIN}/analyze-base64/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ image: base64Data })
       });
 
-      if (!response.ok) throw new Error("Ошибка сервера: " + response.status);
+      if (!response.ok) {
+        throw new Error(`Сервер ответил кодом ${response.status}. Проверьте бэкенд.`);
+      }
 
       const data = await response.json();
 
-      // Убираем анимацию точек
+      // Отображение результата
       signalText.className = "signal-display";
-
-      // Отображаем результат
-      const signal = data.signal || "WAIT";
-      signalText.innerText = signal.toUpperCase();
+      const sig = (data.signal || "WAIT").toUpperCase();
+      signalText.innerText = sig;
       
-      // Красим текст в зависимости от сигнала
-      if (signal.toLowerCase().includes("long") || signal.toLowerCase().includes("buy")) {
-        signalText.style.color = "var(--green)";
-      } else if (signal.toLowerCase().includes("short") || signal.toLowerCase().includes("sell")) {
-        signalText.style.color = "var(--red)";
-      } else {
-        signalText.style.color = "var(--blue)";
-      }
+      // Цвет сигнала
+      if (sig.includes("BUY") || sig.includes("LONG")) signalText.style.color = "var(--green)";
+      else if (sig.includes("SELL") || sig.includes("SHORT")) signalText.style.color = "var(--red)";
+      else signalText.style.color = "white";
 
       document.getElementById('conf').innerText = (data.confidence || data.score || 0) + "%";
-      document.getElementById('exp').innerText = data.expiry || "3-5 мин";
+      document.getElementById('exp').innerText = data.expiry || "3-5 MIN";
       document.getElementById('reason').innerText = data.reason || "Анализ завершен успешно.";
 
-    } catch (error) {
-      console.error(error);
+    } catch (err) {
+      console.error(err);
       signalText.className = "signal-display";
       signalText.innerText = "ОШИБКА";
       signalText.style.color = "var(--red)";
-      document.getElementById('reason').innerText = "Не удалось связаться с ИИ. Проверьте подключение или URL сервера.";
-      alert("Ошибка: " + error.message);
+      
+      // Детальная подсказка для исправления
+      let helpMsg = err.message;
+      if (err.message === "Failed to fetch") {
+        helpMsg = "Сбой сети (Load failed). ПРИЧИНЫ:\n1. Не запущен Python-скрипт\n2. Не запущен ngrok\n3. В коде указан неправильный адрес DOMAIN\n4. На сервере не включен CORS";
+      }
+      document.getElementById('reason').innerText = helpMsg;
+      alert("ВНИМАНИЕ: " + helpMsg);
     }
   }
 </script>
