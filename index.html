@@ -1,320 +1,172 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Kryon AI Trade Bot - Ultra Vision V5</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <style>
-        :root {
-            --bg-color: #0c0f17;
-            --card-bg: #161a24;
-            --accent: #00f281;
-            --text-main: #ffffff;
-            --text-gray: #7a828a;
-            --border: #232a35;
-            --danger: #ff4b5c;
-            --warning: #ff9d00;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PRO Scalp Scanner</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    :root { --bg: #0a0e17; --card: #151924; --green: #00ffaa; --red: #ff3355; --blue: #0088cc; }
+    body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; }
+    .container { max-width: 500px; margin: auto; }
+    h1 { text-align: center; font-size: 24px; margin-bottom: 20px; }
+    
+    .scanner-box { 
+      background: var(--card); 
+      border-radius: 20px; 
+      padding: 20px; 
+      border: 1px solid #333; 
+      text-align: center; 
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
 
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            font-family: 'Inter', -apple-system, sans-serif;
-            margin: 0; padding: 0;
-            overflow: hidden;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
+    #preview { 
+      width: 100%; 
+      border-radius: 10px; 
+      margin: 15px 0; 
+      display: none; 
+      border: 2px solid #333; 
+    }
 
-        .app-header {
-            padding: 20px 15px;
-            text-align: center;
-            background: linear-gradient(to bottom, #11151e, var(--bg-color));
-            border-bottom: 1px solid var(--border);
-        }
-        .header-logo {
-            width: 42px; height: 42px;
-            background: var(--card-bg);
-            border-radius: 12px;
-            display: inline-flex; align-items: center; justify-content: center;
-            border: 1px solid var(--accent);
-            margin-bottom: 8px; font-size: 24px;
-            box-shadow: 0 0 15px rgba(0, 242, 129, 0.2);
-        }
-        .app-title { font-size: 20px; font-weight: 800; margin: 0; letter-spacing: 0.5px; }
-        
-        .content { 
-            flex: 1; 
-            padding: 15px;
-            overflow-y: auto;
-            padding-bottom: 100px;
-        }
-        
-        .screen { display: none; animation: fadeIn 0.4s ease; }
-        .screen.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .btn { 
+      background: linear-gradient(45deg, #0088cc, #004466); 
+      border: none; 
+      padding: 18px 30px; 
+      border-radius: 15px; 
+      color: white; 
+      font-weight: bold; 
+      cursor: pointer; 
+      width: 100%; 
+      font-size: 16px;
+      transition: 0.3s;
+    }
+    .btn:active { transform: scale(0.95); }
 
-        .upload-area {
-            border: 2px dashed var(--border);
-            border-radius: 24px;
-            padding: 40px 15px;
-            text-align: center;
-            background: rgba(255,255,255,0.02);
-            position: relative;
-            cursor: pointer;
-        }
+    .signal-display { font-size: 48px; font-weight: 800; margin: 20px 0; min-height: 60px; }
+    
+    .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
+    .stat-item { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 12px; font-size: 14px; }
+    .stat-item b { display: block; font-size: 18px; margin-top: 5px; color: var(--blue); }
 
-        #main-canvas { width: 100%; border-radius: 12px; display: none; margin-top: 10px; border: 1px solid var(--border); }
-        .scan-line { position: absolute; left: 0; width: 100%; height: 2px; background: var(--accent); box-shadow: 0 0 15px var(--accent); display: none; z-index: 10; }
+    #reason { margin-top: 20px; color: #aaa; font-size: 14px; line-height: 1.4; font-style: italic; }
 
-        .result-card { 
-            background: var(--card-bg); border-radius: 28px; padding: 30px 20px; text-align: center; border: 2px solid var(--border);
-        }
-        .signal-val { font-size: 48px; font-weight: 900; margin: 10px 0; }
-        
-        .analysis-box {
-            background: #11151e; border-radius: 16px; padding: 15px; margin-top: 20px; text-align: left;
-        }
-        .analysis-item { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 10px; color: var(--text-gray); border-bottom: 1px solid #1a1f29; padding-bottom: 5px; }
-        .analysis-item b { color: #fff; }
-
-        .btn-main {
-            width: 100%; padding: 20px; background: var(--accent); color: #000; border: none; border-radius: 18px; font-weight: 800; font-size: 16px; cursor: pointer; text-transform: uppercase; margin-top: 20px;
-        }
-        .btn-main:disabled { background: #232a35; color: #555; }
-
-        .nav-bar {
-            position: fixed; bottom: 0; width: 100%; background: #11151e; border-top: 1px solid var(--border); padding: 15px 0 30px 0; text-align: center;
-        }
-        .nav-item { color: var(--accent); font-size: 10px; font-weight: bold; text-transform: uppercase; }
-
-        /* Стили лога */
-        #analysisLog {
-            font-family: monospace; font-size: 10px; color: var(--accent); margin-top: 10px; text-align: left; display: none;
-        }
-    </style>
+    /* Анимация загрузки */
+    .loading-dots:after {
+      content: ' .';
+      animation: dots 1.5s steps(5, end) infinite;
+    }
+    @keyframes dots {
+      0%, 20% { color: rgba(0,0,0,0); text-shadow: .25em 0 0 rgba(0,0,0,0), .5em 0 0 rgba(0,0,0,0); }
+      40% { color: white; text-shadow: .25em 0 0 rgba(0,0,0,0), .5em 0 0 rgba(0,0,0,0); }
+      60% { text-shadow: .25em 0 0 white, .5em 0 0 rgba(0,0,0,0); }
+      80%, 100% { text-shadow: .25em 0 0 white, .5em 0 0 white; }
+    }
+  </style>
 </head>
 <body>
 
-    <div class="app-header">
-        <div class="header-logo">🤖</div>
-        <h1 class="app-title">Kryon AI Vision V5</h1>
-        <div style="font-size: 10px; color: var(--accent); margin-top: 5px;">ADVANCED NEURAL ENGINE ACTIVE</div>
+<div class="container">
+  <h1>📡 PRO Scalper AI</h1>
+  
+  <div class="scanner-box">
+    <!-- Скрытый инпут -->
+    <input type="file" id="fileInput" accept="image/*" style="display:none">
+    
+    <button class="btn" id="mainBtn" onclick="document.getElementById('fileInput').click()">
+      📸 ВЫБРАТЬ ГРАФИК
+    </button>
+
+    <img id="preview">
+    
+    <div id="result" style="display:none">
+      <div class="signal-display" id="signalText">АНАЛИЗ</div>
+      
+      <div class="stats">
+        <div class="stat-item">Точность<br><b id="conf">-</b></div>
+        <div class="stat-item">Экспирация<br><b id="exp">-</b></div>
+      </div>
+      
+      <p id="reason"></p>
     </div>
+  </div>
+</div>
 
-    <div class="content">
-        <div id="screen-upload" class="screen active">
-            <div class="upload-area" onclick="document.getElementById('fileInput').click()">
-                <div id="placeholder">
-                    <div style="font-size: 40px; margin-bottom: 15px;">📸</div>
-                    <b data-i18n="up_t">ЗАГРУЗИТЬ ГРАФИК</b>
-                    <p style="font-size: 11px; color: var(--text-gray);" data-i18n="up_d">ИИ проанализирует объемы и свечные паттерны</p>
-                </div>
-                <div class="scan-line" id="scanLine"></div>
-                <canvas id="main-canvas"></canvas>
-            </div>
-            
-            <div id="analysisLog"></div>
+<script>
+  const tg = window.Telegram.WebApp;
+  tg.expand(); // Раскрыть на весь экран
 
-            <input type="file" id="fileInput" accept="image/*" style="display:none" onchange="handleImage(this)">
-            <button id="visionBtn" class="btn-main" style="display:none" onclick="performDeepAnalysis()" data-i18n="btn_scan">АНАЛИЗ</button>
-            <button class="btn-main" style="background: transparent; color: var(--text-gray); border: 1px solid var(--border); margin-top: 10px;" onclick="toggleLang()">RU / EN</button>
-        </div>
+  const fileInput = document.getElementById('fileInput');
+  const preview = document.getElementById('preview');
+  const result = document.getElementById('result');
+  const signalText = document.getElementById('signalText');
 
-        <div id="screen-result" class="screen">
-            <div class="result-card" id="resBorder">
-                <div style="color: var(--text-gray); font-size: 10px;" data-i18n="res_l">NEURAL ANALYSIS RESULT</div>
-                <div id="resSignal" class="signal-val">---</div>
-                <div id="resAccuracy" style="font-size: 18px; font-weight: bold; color: var(--accent);">Confidence: --%</div>
-                
-                <div class="analysis-box">
-                    <div class="analysis-item"><span data-i18n="an_v">Volumes:</span> <b id="val-vol">---</b></div>
-                    <div class="analysis-item"><span data-i18n="an_p">Pattern:</span> <b id="val-patt">---</b></div>
-                    <div class="analysis-item"><span data-i18n="an_t">Time:</span> <b id="val-time">---</b></div>
-                </div>
-            </div>
-            <button class="btn-main" style="background: #232a35; color: #fff;" onclick="location.reload()" data-i18n="btn_new">NEW SCAN</button>
-        </div>
-    </div>
+  fileInput.onchange = function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
 
-    <div class="nav-bar"><div class="nav-item">⚡ High Accuracy Mode</div></div>
+    const reader = new FileReader();
+    reader.onload = function(event) {
+      preview.src = event.target.result;
+      preview.style.display = 'block';
+      
+      // Сразу запускаем анализ после выбора фото
+      analyzeImage(event.target.result);
+    };
+    reader.readAsDataURL(file);
+  };
 
-    <script>
-        const tg = window.Telegram.WebApp;
-        if (tg.expand) tg.expand();
+  async function analyzeImage(base64Data) {
+    // Подготовка интерфейса
+    result.style.display = 'block';
+    signalText.innerText = "АНАЛИЗ";
+    signalText.className = "signal-display loading-dots";
+    signalText.style.color = "white";
+    document.getElementById('reason').innerText = "Искусственный интеллект изучает структуру рынка...";
 
-        let currentLang = 'ru';
-        let detectedTheme = 'green_red';
-        const canvas = document.getElementById('main-canvas');
-        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    try {
+      // !!! ВАЖНО: ЗАМЕНИТЕ ЭТУ ССЫЛКУ НА ВАШ URL ОТ NGROK (ОБЯЗАТЕЛЬНО HTTPS)
+      const SERVER_URL = "https://ВАШ_АДРЕС.ngrok-free.app/analyze-base64/";
 
-        const trans = {
-            ru: {
-                up_t: "ЗАГРУЗИТЬ СКРИНШОТ", up_d: "ИИ анализирует объемы и хвосты свечей",
-                btn_scan: "ЗАПУСТИТЬ ИИ-СКАН", res_l: "РЕЗУЛЬТАТ НЕЙРОННОГО АНАЛИЗА",
-                an_v: "Объемы:", an_p: "Паттерн:", an_t: "Время:",
-                btn_new: "НОВЫЙ СКАН", up: "ВВЕРХ 🟢", down: "ВНИЗ 🔴",
-                vol_high: "ВЫСОКИЕ (Подтверждено)", vol_low: "НИЗКИЕ (Дивергенция)",
-                p_pin: "Pin-Bar (Разворот)", p_trend: "Trend Flow (По тренду)", p_neut: "Neutral (Боковик)",
-                log_1: "> Фильтрация шума и сетки...", log_2: "> Анализ зоны объемов...", log_3: "> Детекция хвостов свечей...", log_4: "> Проверка паттернов...", log_5: "> Финализация данных..."
-            },
-            en: {
-                up_t: "UPLOAD SCREENSHOT", up_d: "AI analyzes volumes and candle wicks",
-                btn_scan: "RUN AI SCAN", res_l: "NEURAL ANALYSIS RESULT",
-                an_v: "Volumes:", an_p: "Pattern:", an_t: "Exp. Time:",
-                btn_new: "NEW SCAN", up: "CALL 🟢", down: "PUT 🔴",
-                vol_high: "HIGH (Confirmed)", vol_low: "LOW (Divergence)",
-                p_pin: "Pin-Bar (Reversal)", p_trend: "Trend Flow", p_neut: "Neutral (Sideways)",
-                log_1: "> Grid & Noise filtering...", log_2: "> Volume zone scanning...", log_3: "> Candle wick detection...", log_4: "> Pattern matching...", log_5: "> Finalizing score..."
-            }
-        };
+      const response = await fetch(SERVER_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image: base64Data })
+      });
 
-        function toggleLang() {
-            currentLang = currentLang === 'en' ? 'ru' : 'en';
-            updateLocalization();
-        }
+      if (!response.ok) throw new Error("Ошибка сервера: " + response.status);
 
-        function updateLocalization() {
-            document.querySelectorAll('[data-i18n]').forEach(el => {
-                const key = el.getAttribute('data-i18n');
-                if (trans[currentLang][key]) el.innerText = trans[currentLang][key];
-            });
-        }
-        updateLocalization();
+      const data = await response.json();
 
-        window.handleImage = function(input) {
-            const file = input.files[0];
-            if(!file) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const img = new Image();
-                img.onload = function() {
-                    const aspect = img.height / img.width;
-                    canvas.width = 1000; 
-                    canvas.height = 1000 * aspect;
-                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                    canvas.style.display = 'block';
-                    document.getElementById('placeholder').style.display = 'none';
-                    document.getElementById('visionBtn').style.display = 'block';
-                    autoDetectTheme();
-                };
-                img.src = e.target.result;
-            };
-            reader.readAsDataURL(file);
-        };
+      // Убираем анимацию точек
+      signalText.className = "signal-display";
 
-        // ПУНКТ 1: АВТООПРЕДЕЛЕНИЕ И ФИЛЬТРАЦИЯ ШУМА
-        function autoDetectTheme() {
-            const data = ctx.getImageData(0, 0, canvas.width, 100).data;
-            let green = 0, blue = 0;
-            for(let i=0; i<data.length; i+=40) {
-                if (data[i+1] > data[i] + 30) green++;
-                if (data[i+2] > data[i] + 30) blue++;
-            }
-            detectedTheme = (blue > green) ? 'blue_red' : 'green_red';
-            console.log("Detected Theme:", detectedTheme);
-        }
+      // Отображаем результат
+      const signal = data.signal || "WAIT";
+      signalText.innerText = signal.toUpperCase();
+      
+      // Красим текст в зависимости от сигнала
+      if (signal.toLowerCase().includes("long") || signal.toLowerCase().includes("buy")) {
+        signalText.style.color = "var(--green)";
+      } else if (signal.toLowerCase().includes("short") || signal.toLowerCase().includes("sell")) {
+        signalText.style.color = "var(--red)";
+      } else {
+        signalText.style.color = "var(--blue)";
+      }
 
-        window.performDeepAnalysis = async function() {
-            const btn = document.getElementById('visionBtn');
-            const log = document.getElementById('analysisLog');
-            const line = document.getElementById('scanLine');
-            const t = trans[currentLang];
+      document.getElementById('conf').innerText = (data.confidence || data.score || 0) + "%";
+      document.getElementById('exp').innerText = data.expiry || "3-5 мин";
+      document.getElementById('reason').innerText = data.reason || "Анализ завершен успешно.";
 
-            btn.disabled = true;
-            log.style.display = 'block';
-            line.style.display = 'block';
+    } catch (error) {
+      console.error(error);
+      signalText.className = "signal-display";
+      signalText.innerText = "ОШИБКА";
+      signalText.style.color = "var(--red)";
+      document.getElementById('reason').innerText = "Не удалось связаться с ИИ. Проверьте подключение или URL сервера.";
+      alert("Ошибка: " + error.message);
+    }
+  }
+</script>
 
-            for(let i=1; i<=5; i++) {
-                log.innerHTML += t['log_'+i] + "<br>";
-                line.style.top = (i * 18) + "%";
-                if(tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
-                await new Promise(r => setTimeout(r, 700));
-            }
-
-            const w = canvas.width, h = canvas.height;
-            const chartMid = Math.floor(h * 0.2);
-            const chartHeight = Math.floor(h * 0.6);
-
-            // ПУНКТ 2: АНАЛИЗ ОБЪЕМОВ (Нижняя зона)
-            const volZoneTop = Math.floor(h * 0.82);
-            const volData = ctx.getImageData(0, volZoneTop, w, h * 0.1).data;
-            let volIntensity = 0;
-            for(let i=0; i<volData.length; i+=16) {
-                // Фильтр шума: только насыщенные цвета, игнорируем серый
-                const r=volData[i], g=volData[i+1], b=volData[i+2];
-                if (Math.max(r,g,b) - Math.min(r,g,b) > 50) volIntensity++;
-            }
-
-            // ПУНКТ 3: АНАЛИЗ ПАТТЕРНОВ (Хвосты и Свечи)
-            const mX = Math.floor(w * 0.80), mW = Math.floor(w * 0.1);
-            const mData = ctx.getImageData(mX, chartMid, mW, chartHeight).data;
-            
-            let pixelsUp = 0, pixelsDown = 0;
-            let topMass = 0, bottomMass = 0; // Для поиска Pin-bar
-
-            for(let i=0; i<mData.length; i+=32) {
-                const r=mData[i], g=mData[i+1], b=mData[i+2];
-                const y = (i/4) / mW;
-                
-                // Фильтрация сетки (игнорируем, если разница между RGB мала)
-                if (Math.max(r,g,b) - Math.min(r,g,b) < 40) continue;
-
-                const isUp = (detectedTheme === 'green_red') ? (g > r+20) : (b > r+20);
-                const isDown = (r > g+20);
-
-                if(isUp) { 
-                    pixelsUp++; 
-                    if(y < chartHeight * 0.4) topMass++; else bottomMass++;
-                }
-                if(isDown) { 
-                    pixelsDown++; 
-                    if(y < chartHeight * 0.4) topMass++; else bottomMass++;
-                }
-            }
-
-            // Глобальный тренд
-            const backData = ctx.getImageData(0, chartMid, w*0.7, chartHeight).data;
-            let gUp=0, gDown=0;
-            for(let i=0; i<backData.length; i+=256) {
-                if (Math.max(backData[i],backData[i+1],backData[i+2]) - Math.min(backData[i],backData[i+1],backData[i+2]) < 40) continue;
-                if(detectedTheme === 'green_red' ? backData[i+1] > backData[i]+20 : backData[i+2] > backData[i]+20) gUp++; else gDown++;
-            }
-
-            // Итоговая логика
-            let finalUp = pixelsUp > pixelsDown;
-            let pattern = t.p_trend;
-            let accuracy = 72;
-            let volumeStatus = volIntensity > (w * h * 0.005) ? t.vol_high : t.vol_low;
-
-            // Детекция Pin-bar (если основная масса пикселей в одной половине свечи)
-            if (Math.abs(topMass - bottomMass) > (topMass + bottomMass) * 0.5) {
-                pattern = t.p_pin;
-                accuracy += 12;
-                finalUp = (bottomMass > topMass); // Если хвост снизу — идем вверх
-            }
-
-            // Дивергенция объемов
-            if (volumeStatus === t.vol_low) accuracy -= 10;
-
-            // Вывод результата
-            document.getElementById('screen-upload').classList.remove('active');
-            document.getElementById('screen-result').classList.add('active');
-            
-            const sig = document.getElementById('resSignal');
-            sig.innerText = finalUp ? t.up : t.down;
-            sig.style.color = finalUp ? "var(--accent)" : "var(--danger)";
-            document.getElementById('resBorder').style.borderColor = sig.style.color;
-
-            document.getElementById('val-vol').innerText = volumeStatus;
-            document.getElementById('val-patt').innerText = pattern;
-            document.getElementById('val-time').innerText = (pattern === t.p_pin) ? "1-2 MIN" : "3-5 MIN";
-            document.getElementById('resAccuracy').innerText = "Confidence: " + (accuracy + Math.random()*5).toFixed(1) + "%";
-
-            if(tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
-        };
-    </script>
 </body>
 </html>
