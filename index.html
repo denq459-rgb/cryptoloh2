@@ -41,7 +41,8 @@
       margin-top: 10px;
     }
 
-    .scanner {
+    /* 🔥 SCANNER ANIMATION */
+    .scanner-line {
       position: absolute;
       width: 100%;
       height: 3px;
@@ -53,8 +54,9 @@
     }
 
     @keyframes scan {
-      0% { top: 0%; }
-      100% { top: 100%; }
+      0% { top: 0%; opacity: 0.2; }
+      50% { opacity: 1; }
+      100% { top: 100%; opacity: 0.2; }
     }
 
     .signal {
@@ -81,58 +83,69 @@
       margin-top: 6px;
     }
 
+    .label { opacity: 0.7; }
+
     .box {
       margin-top: 10px;
       font-size: 14px;
       opacity: 0.9;
     }
 
-    .stat {
-      text-align: center;
-      margin-top: 8px;
-      font-size: 16px;
+    .strategy {
+      margin-top: 10px;
+      padding: 10px;
+      background: #0f172a;
+      border-radius: 10px;
+      font-size: 13px;
     }
 
-    .green { color: #22c55e; }
-    .red { color: #ef4444; }
-    .blue { color: #60a5fa; }
-    .purple { color: #a78bfa; }
+    .tag {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 6px;
+      margin: 3px;
+      font-size: 12px;
+      background: #1e293b;
+    }
+
+    .green { background: #14532d; }
+    .red { background: #7f1d1d; }
+
+    .loading {
+      text-align: center;
+      margin-top: 10px;
+      color: #60a5fa;
+      display: none;
+    }
   </style>
 </head>
 
 <body>
 
-<h1>📡 AI Trading Scanner Pro</h1>
+<h1>📡 AI Market Scanner</h1>
 
 <div class="card">
-  <div class="scanner" id="scanner"></div>
+  <div class="scanner-line" id="scanner"></div>
 
   <input type="file" id="fileInput" />
   <button onclick="analyze()">Scan Market</button>
+
+  <div class="loading" id="loading">Scanning market structure...</div>
 </div>
 
 <div class="card">
 
   <div class="signal" id="signal">WAIT</div>
 
-  <div class="stat blue">
-    Score: <span id="score">-</span>
+  <div class="box">
+    Score: <span id="score">-</span><br>
+    Expiry: <span id="expiry">-</span><br>
+    Accuracy: <span id="accuracy">-</span>
   </div>
 
-  <div class="stat purple">
-    ⏱️ Expiry: <span id="expiry">-</span>
-  </div>
-
-  <div class="stat green">
-    📊 Strategy Accuracy: <span id="accuracy">-</span>%
-  </div>
-
-  <div class="stat">
-    📈 Backtest (live): <span id="backtest">-</span>
-  </div>
-
-  <div class="box" id="info">
-    Waiting for analysis...
+  <div class="strategy">
+    <b>Multi-Strategy Engine:</b><br>
+    <div id="strategies"></div>
   </div>
 
 </div>
@@ -141,25 +154,19 @@
   const tg = window.Telegram.WebApp;
   tg.expand();
 
-  function scanOn() {
-    document.getElementById("scanner").style.display = "block";
-  }
-
-  function scanOff() {
-    document.getElementById("scanner").style.display = "none";
-  }
-
   function getExpiry(score) {
-    if (score >= 85) return "5 min (HIGH QUALITY)";
+    if (score >= 85) return "5 min";
     if (score >= 70) return "10 min";
     if (score >= 60) return "15 min";
     return "NO TRADE";
   }
 
-  function signalColor(signal) {
-    if (signal === "BUY") return "buy";
-    if (signal === "SELL") return "sell";
-    return "wait";
+  function showScanner() {
+    document.getElementById("scanner").style.display = "block";
+  }
+
+  function hideScanner() {
+    document.getElementById("scanner").style.display = "none";
   }
 
   async function analyze() {
@@ -170,7 +177,8 @@
       return;
     }
 
-    scanOn();
+    showScanner();
+    document.getElementById("loading").style.display = "block";
 
     const formData = new FormData();
     formData.append("file", file);
@@ -183,14 +191,11 @@
 
       const data = await res.json();
 
-      scanOff();
+      hideScanner();
+      document.getElementById("loading").style.display = "none";
 
       // SIGNAL
-      const signal = data.signal;
-      const el = document.getElementById("signal");
-
-      el.innerText = signal;
-      el.className = "signal " + signalColor(signal);
+      document.getElementById("signal").innerText = data.signal;
 
       // SCORE
       document.getElementById("score").innerText = data.score  0;
@@ -198,25 +203,38 @@
       // EXPIRY
       document.getElementById("expiry").innerText =
         getExpiry(data.score  0);
-      
-      // ACCURACY (backtest)
+
+      // ACCURACY
       document.getElementById("accuracy").innerText =
-        (data.accuracy  0);
+        (data.accuracy  0) + "%";
 
-      // LIVE BACKTEST DISPLAY
-      document.getElementById("backtest").innerText =
-        "Wins: " + (data.backtest?.wins  0) +
-        " / Losses: " + (data.backtest?.losses  0) +
-        " / Trades: " + (data.backtest?.total  0);
+      // MULTI STRATEGY DISPLAY
+      const el = document.getElementById("strategies");
+      el.innerHTML = "";
 
-      // INFO
-      document.getElementById("info").innerText =
-        "Strategy: Supertrend + EMA200 + RSI + MACD + Volume";
+      const strategies = data.strategies  {
+        supertrend: false,
+        ema200: false,
+        rsi: false,
+        macd: false,
+        volume: false
+      };
 
-    } catch (e) {
-      console.error(e);
-      scanOff();
+      for (let key in strategies) {
+        const ok = strategies[key];
+
+        const tag = document.createElement("div");
+        tag.className = "tag " + (ok ? "green" : "red");
+        tag.innerText = (ok ? "✔️ " : "✖️ ") + key.toUpperCase();
+
+        el.appendChild(tag);
+      }
+
+    } catch (err) {
+      console.error(err);
       alert("Backend error");
+      hideScanner();
+      document.getElementById("loading").style.display = "none";
     }
   }
 </script>
