@@ -2,19 +2,22 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AI Trading Scanner Pro</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
   <style>
     body {
-      font-family: Arial;
+      font-family: Arial, sans-serif;
       background: #0b1220;
       color: white;
       padding: 20px;
+      margin: 0;
     }
 
     h1 {
       text-align: center;
+      font-size: 22px;
     }
 
     .card {
@@ -24,6 +27,7 @@
       margin-top: 15px;
       position: relative;
       overflow: hidden;
+      border: 1px solid #1e293b;
     }
 
     button {
@@ -34,11 +38,19 @@
       background: linear-gradient(90deg, #22c55e, #16a34a);
       color: white;
       font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+
+    button:active {
+      transform: scale(0.98);
     }
 
     input {
       width: 100%;
       margin-top: 10px;
+      color: white;
     }
 
     /* 🔥 SCANNER ANIMATION */
@@ -64,10 +76,13 @@
       text-align: center;
       font-weight: bold;
       margin-top: 15px;
-      animation: pulse 1.5s infinite;
     }
 
-    @keyframes pulse {
+    .pulse {
+      animation: pulse-anim 1.5s infinite;
+    }
+
+    @keyframes pulse-anim {
       0% { opacity: 1; }
       50% { opacity: 0.4; }
       100% { opacity: 1; }
@@ -77,22 +92,17 @@
     .sell { color: #ef4444; }
     .wait { color: #eab308; }
 
-    .row {
-      display: flex;
-      justify-content: space-between;
-      margin-top: 6px;
-    }
-
-    .label { opacity: 0.7; }
-
     .box {
-      margin-top: 10px;
+      margin-top: 15px;
       font-size: 14px;
-      opacity: 0.9;
+      line-height: 1.6;
+      background: rgba(255,255,255,0.05);
+      padding: 10px;
+      border-radius: 8px;
     }
 
     .strategy {
-      margin-top: 10px;
+      margin-top: 15px;
       padding: 10px;
       background: #0f172a;
       border-radius: 10px;
@@ -104,18 +114,20 @@
       padding: 4px 8px;
       border-radius: 6px;
       margin: 3px;
-      font-size: 12px;
-      background: #1e293b;
+      font-size: 11px;
+      font-weight: bold;
+      text-transform: uppercase;
     }
 
-    .green { background: #14532d; }
-    .red { background: #7f1d1d; }
+    .green { background: #14532d; color: #4ade80; }
+    .red { background: #7f1d1d; color: #f87171; }
 
     .loading {
       text-align: center;
       margin-top: 10px;
       color: #60a5fa;
       display: none;
+      font-size: 14px;
     }
   </style>
 </head>
@@ -127,27 +139,25 @@
 <div class="card">
   <div class="scanner-line" id="scanner"></div>
 
-  <input type="file" id="fileInput" />
-  <button onclick="analyze()">Scan Market</button>
+  <input type="file" id="fileInput" accept="image/*" />
+  <button onclick="analyze()">SCAN MARKET</button>
 
   <div class="loading" id="loading">Scanning market structure...</div>
 </div>
 
 <div class="card">
-
-  <div class="signal" id="signal">WAIT</div>
+  <div class="signal pulse" id="signal">WAIT</div>
 
   <div class="box">
-    Score: <span id="score">-</span><br>
-    Expiry: <span id="expiry">-</span><br>
-    Accuracy: <span id="accuracy">-</span>
+    <b>Score:</b> <span id="score">-</span><br>
+    <b>Expiry:</b> <span id="expiry">-</span><br>
+    <b>Accuracy:</b> <span id="accuracy">-</span>
   </div>
 
   <div class="strategy">
     <b>Multi-Strategy Engine:</b><br>
-    <div id="strategies"></div>
+    <div id="strategies" style="margin-top: 8px;"></div>
   </div>
-
 </div>
 
 <script>
@@ -163,56 +173,63 @@
 
   function showScanner() {
     document.getElementById("scanner").style.display = "block";
+    document.getElementById("loading").style.display = "block";
   }
 
   function hideScanner() {
     document.getElementById("scanner").style.display = "none";
+    document.getElementById("loading").style.display = "none";
   }
 
   async function analyze() {
-    const file = document.getElementById("fileInput").files[0];
+    const fileInput = document.getElementById("fileInput");
+    const file = fileInput.files[0];
 
     if (!file) {
-      alert("Upload screenshot");
+      alert("Please upload a screenshot first!");
       return;
     }
 
     showScanner();
-    document.getElementById("loading").style.display = "block";
 
     const formData = new FormData();
     formData.append("file", file);
 
     try {
+      // ПРИМЕЧАНИЕ: Если работаете через Telegram, используйте https:// и реальный домен
       const res = await fetch("http://localhost:8000/analyze/", {
         method: "POST",
         body: formData
       });
 
+      if (!res.ok) throw new Error("Server error: " + res.status);
+
       const data = await res.json();
 
       hideScanner();
-      document.getElementById("loading").style.display = "none";
 
-      // SIGNAL
-      document.getElementById("signal").innerText = data.signal;
+      // Отображение сигнала (BUY/SELL/WAIT)
+      const signalEl = document.getElementById("signal");
+      const signalValue = data.signal || "WAIT";
+      signalEl.innerText = signalValue;
+      
+      // Сброс и установка цвета
+      signalEl.className = "signal pulse"; 
+      if (signalValue.toLowerCase().includes("buy")) signalEl.classList.add("buy");
+      else if (signalValue.toLowerCase().includes("sell")) signalEl.classList.add("sell");
+      else signalEl.classList.add("wait");
 
-      // SCORE
-      document.getElementById("score").innerText = data.score  0;
+      // Данные
+      const score = data.score || 0;
+      document.getElementById("score").innerText = score;
+      document.getElementById("expiry").innerText = getExpiry(score);
+      document.getElementById("accuracy").innerText = (data.accuracy || 0) + "%";
 
-      // EXPIRY
-      document.getElementById("expiry").innerText =
-        getExpiry(data.score  0);
+      // Стратегии
+      const strategiesEl = document.getElementById("strategies");
+      strategiesEl.innerHTML = "";
 
-      // ACCURACY
-      document.getElementById("accuracy").innerText =
-        (data.accuracy  0) + "%";
-
-      // MULTI STRATEGY DISPLAY
-      const el = document.getElementById("strategies");
-      el.innerHTML = "";
-
-      const strategies = data.strategies  {
+      const strategies = data.strategies || {
         supertrend: false,
         ema200: false,
         rsi: false,
@@ -222,19 +239,16 @@
 
       for (let key in strategies) {
         const ok = strategies[key];
-
         const tag = document.createElement("div");
         tag.className = "tag " + (ok ? "green" : "red");
         tag.innerText = (ok ? "✔️ " : "✖️ ") + key.toUpperCase();
-
-        el.appendChild(tag);
+        strategiesEl.appendChild(tag);
       }
 
     } catch (err) {
       console.error(err);
-      alert("Backend error");
+      alert("Error: " + err.message);
       hideScanner();
-      document.getElementById("loading").style.display = "none";
     }
   }
 </script>
