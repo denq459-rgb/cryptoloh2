@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>AI Trading Scanner Pro</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+  <style>
+    body {
+      font-family: Arial;
+      background: #0b1220;
+      color: white;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+    }
+
+    .card {
+      background: #111a2e;
+      padding: 15px;
+      border-radius: 14px;
+      margin-top: 15px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    button {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 10px;
+      background: linear-gradient(90deg, #22c55e, #16a34a);
+      color: white;
+      font-size: 16px;
+    }
+
+    input {
+      width: 100%;
+      margin-top: 10px;
+    }
+
+    .scanner {
+      position: absolute;
+      width: 100%;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, #22c55e, transparent);
+      top: 0;
+      left: 0;
+      animation: scan 2s linear infinite;
+      display: none;
+    }
+
+    @keyframes scan {
+      0% { top: 0%; }
+      100% { top: 100%; }
+    }
+
+    .signal {
+      font-size: 34px;
+      text-align: center;
+      font-weight: bold;
+      margin-top: 15px;
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.4; }
+      100% { opacity: 1; }
+    }
+
+    .buy { color: #22c55e; }
+    .sell { color: #ef4444; }
+    .wait { color: #eab308; }
+
+    .row {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 6px;
+    }
+
+    .box {
+      margin-top: 10px;
+      font-size: 14px;
+      opacity: 0.9;
+    }
+
+    .stat {
+      text-align: center;
+      margin-top: 8px;
+      font-size: 16px;
+    }
+
+    .green { color: #22c55e; }
+    .red { color: #ef4444; }
+    .blue { color: #60a5fa; }
+    .purple { color: #a78bfa; }
+  </style>
+</head>
+
+<body>
+
+<h1>📡 AI Trading Scanner Pro</h1>
+
+<div class="card">
+  <div class="scanner" id="scanner"></div>
+
+  <input type="file" id="fileInput" />
+  <button onclick="analyze()">Scan Market</button>
+</div>
+
+<div class="card">
+
+  <div class="signal" id="signal">WAIT</div>
+
+  <div class="stat blue">
+    Score: <span id="score">-</span>
+  </div>
+
+  <div class="stat purple">
+    ⏱️ Expiry: <span id="expiry">-</span>
+  </div>
+
+  <div class="stat green">
+    📊 Strategy Accuracy: <span id="accuracy">-</span>%
+  </div>
+
+  <div class="stat">
+    📈 Backtest (live): <span id="backtest">-</span>
+  </div>
+
+  <div class="box" id="info">
+    Waiting for analysis...
+  </div>
+
+</div>
+
+<script>
+  const tg = window.Telegram.WebApp;
+  tg.expand();
+
+  function scanOn() {
+    document.getElementById("scanner").style.display = "block";
+  }
+
+  function scanOff() {
+    document.getElementById("scanner").style.display = "none";
+  }
+
+  function getExpiry(score) {
+    if (score >= 85) return "5 min (HIGH QUALITY)";
+    if (score >= 70) return "10 min";
+    if (score >= 60) return "15 min";
+    return "NO TRADE";
+  }
+
+  function signalColor(signal) {
+    if (signal === "BUY") return "buy";
+    if (signal === "SELL") return "sell";
+    return "wait";
+  }
+
+  async function analyze() {
+    const file = document.getElementById("fileInput").files[0];
+
+    if (!file) {
+      alert("Upload screenshot");
+      return;
+    }
+
+    scanOn();
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const res = await fetch("http://localhost:8000/analyze/", {
+        method: "POST",
+        body: formData
+      });
+
+      const data = await res.json();
+
+      scanOff();
+
+      // SIGNAL
+      const signal = data.signal;
+      const el = document.getElementById("signal");
+
+      el.innerText = signal;
+      el.className = "signal " + signalColor(signal);
+
+      // SCORE
+      document.getElementById("score").innerText = data.score  0;
+
+      // EXPIRY
+      document.getElementById("expiry").innerText =
+        getExpiry(data.score  0);
+      
+      // ACCURACY (backtest)
+      document.getElementById("accuracy").innerText =
+        (data.accuracy  0);
+
+      // LIVE BACKTEST DISPLAY
+      document.getElementById("backtest").innerText =
+        "Wins: " + (data.backtest?.wins  0) +
+        " / Losses: " + (data.backtest?.losses  0) +
+        " / Trades: " + (data.backtest?.total  0);
+
+      // INFO
+      document.getElementById("info").innerText =
+        "Strategy: Supertrend + EMA200 + RSI + MACD + Volume";
+
+    } catch (e) {
+      console.error(e);
+      scanOff();
+      alert("Backend error");
+    }
+  }
+</script>
+
+</body>
+</html>
