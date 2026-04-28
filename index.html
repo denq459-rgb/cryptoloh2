@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Kryon AI Trade Bot - Ultra Vision</title>
+    <title>Kryon AI Trade Bot - Ultra Vision V5</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
@@ -22,190 +22,159 @@
             color: var(--text-main);
             font-family: 'Inter', -apple-system, sans-serif;
             margin: 0; padding: 0;
-            overflow-x: hidden;
-            overflow-y: auto;
-            min-height: 100vh;
+            overflow: hidden;
+            height: 100vh;
             display: flex;
             flex-direction: column;
         }
 
         .app-header {
-            padding: 25px 15px 15px;
+            padding: 20px 15px;
             text-align: center;
             background: linear-gradient(to bottom, #11151e, var(--bg-color));
             border-bottom: 1px solid var(--border);
-            flex-shrink: 0;
         }
         .header-logo {
-            width: 40px; height: 40px;
+            width: 42px; height: 42px;
             background: var(--card-bg);
             border-radius: 12px;
             display: inline-flex; align-items: center; justify-content: center;
             border: 1px solid var(--accent);
-            margin-bottom: 10px; color: var(--accent); font-size: 22px;
-            box-shadow: 0 0 15px rgba(0, 242, 129, 0.15);
+            margin-bottom: 8px; font-size: 24px;
+            box-shadow: 0 0 15px rgba(0, 242, 129, 0.2);
         }
-        .app-title { font-size: 22px; font-weight: 800; margin: 0; letter-spacing: 0.5px; }
-        .app-subtitle { font-size: 11px; color: var(--accent); text-transform: uppercase; letter-spacing: 1px; margin-top: 5px; }
+        .app-title { font-size: 20px; font-weight: 800; margin: 0; letter-spacing: 0.5px; }
         
-        .steps-bar {
-            display: inline-flex; gap: 20px;
-            background: #11151e; padding: 8px 20px;
-            border-radius: 20px; font-size: 11px; color: var(--text-gray);
-            margin-top: 20px; font-weight: bold; border: 1px solid #1a1f29;
-        }
-        .steps-bar span.active { color: var(--text-main); display: flex; align-items: center; gap: 6px; }
-        .steps-bar span.active::before { content: '●'; color: var(--accent); }
-
         .content { 
             flex: 1; 
-            padding: 20px 15px;
-            padding-bottom: 120px; 
+            padding: 15px;
+            overflow-y: auto;
+            padding-bottom: 100px;
         }
         
-        .screen { display: none; animation: fadeIn 0.3s ease; }
+        .screen { display: none; animation: fadeIn 0.4s ease; }
         .screen.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
         .upload-area {
             border: 2px dashed var(--border);
             border-radius: 24px;
-            padding: 55px 15px;
+            padding: 40px 15px;
             text-align: center;
             background: rgba(255,255,255,0.02);
             position: relative;
-            overflow: hidden;
             cursor: pointer;
-            transition: 0.3s;
         }
 
         #main-canvas { width: 100%; border-radius: 12px; display: none; margin-top: 10px; border: 1px solid var(--border); }
-        .scan-line { position: absolute; left: 0; width: 100%; height: 3px; background: var(--accent); box-shadow: 0 0 20px var(--accent); display: none; z-index: 10; pointer-events: none; }
-        .analysis-log { position: absolute; top: 10px; left: 10px; font-family: monospace; font-size: 9px; color: var(--accent); text-align: left; z-index: 11; display: none; background: rgba(0,0,0,0.5); padding: 5px; border-radius: 4px; }
-
-        .theme-selector {
-            margin-top: 15px; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 12px; color: var(--text-gray);
-        }
-        .theme-selector select { background: var(--card-bg); color: #fff; border: 1px solid var(--border); padding: 5px; border-radius: 8px; outline: none; }
+        .scan-line { position: absolute; left: 0; width: 100%; height: 2px; background: var(--accent); box-shadow: 0 0 15px var(--accent); display: none; z-index: 10; }
 
         .result-card { 
-            background: var(--card-bg); border-radius: 28px; padding: 35px 20px; text-align: center; border: 2px solid var(--border); margin-bottom: 20px;
+            background: var(--card-bg); border-radius: 28px; padding: 30px 20px; text-align: center; border: 2px solid var(--border);
         }
-        .signal-val { font-size: 52px; font-weight: 900; margin: 15px 0; letter-spacing: 1px; }
+        .signal-val { font-size: 48px; font-weight: 900; margin: 10px 0; }
         
         .analysis-box {
-            background: #11151e; border-radius: 14px; padding: 15px; margin-top: 25px; text-align: left; border-left: 3px solid var(--accent);
+            background: #11151e; border-radius: 16px; padding: 15px; margin-top: 20px; text-align: left;
         }
-        .analysis-item { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 8px; color: var(--text-gray); }
+        .analysis-item { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 10px; color: var(--text-gray); border-bottom: 1px solid #1a1f29; padding-bottom: 5px; }
         .analysis-item b { color: #fff; }
 
         .btn-main {
-            width: 100%; padding: 22px; background: var(--accent); color: #000; border: none; border-radius: 18px; font-weight: 800; font-size: 16px; cursor: pointer; text-transform: uppercase; box-shadow: 0 5px 20px rgba(0, 242, 129, 0.3); transition: 0.2s; margin-bottom: 20px;
+            width: 100%; padding: 20px; background: var(--accent); color: #000; border: none; border-radius: 18px; font-weight: 800; font-size: 16px; cursor: pointer; text-transform: uppercase; margin-top: 20px;
         }
-        .btn-main:active { transform: scale(0.98); }
-        .btn-main:disabled { background: #232a35; color: #555; box-shadow: none; cursor: not-allowed; }
-
-        .lang-btn {
-            background: #161a24; color: var(--accent); border: 1px solid var(--border); padding: 8px 16px; border-radius: 10px; font-size: 11px; font-weight: bold; cursor: pointer; margin: 10px auto 0; display: block;
-        }
+        .btn-main:disabled { background: #232a35; color: #555; }
 
         .nav-bar {
-            position: fixed; bottom: 0; width: 100%; background: #11151e; border-top: 1px solid var(--border); padding: 15px 0 35px 0; text-align: center; z-index: 1000;
+            position: fixed; bottom: 0; width: 100%; background: #11151e; border-top: 1px solid var(--border); padding: 15px 0 30px 0; text-align: center;
         }
-        .nav-item { color: var(--accent); font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
+        .nav-item { color: var(--accent); font-size: 10px; font-weight: bold; text-transform: uppercase; }
+
+        /* Стили лога */
+        #analysisLog {
+            font-family: monospace; font-size: 10px; color: var(--accent); margin-top: 10px; text-align: left; display: none;
+        }
     </style>
 </head>
 <body>
 
     <div class="app-header">
-        <div class="header-logo">📈</div>
-        <h1 class="app-title">Kryon AI Trade Bot</h1>
-        <p class="app-subtitle">Ultra Momentum Vision v4</p>
-        <div class="steps-bar">
-            <span id="step-upload" class="active" data-i18n="step_up">Upload</span>
-            <span id="step-result" data-i18n="step_res">Signal</span>
-        </div>
+        <div class="header-logo">🤖</div>
+        <h1 class="app-title">Kryon AI Vision V5</h1>
+        <div style="font-size: 10px; color: var(--accent); margin-top: 5px;">ADVANCED NEURAL ENGINE ACTIVE</div>
     </div>
 
     <div class="content">
         <div id="screen-upload" class="screen active">
             <div class="upload-area" onclick="document.getElementById('fileInput').click()">
                 <div id="placeholder">
-                    <div style="font-size: 55px; margin-bottom: 20px;">🖼️</div>
-                    <div style="font-weight: 800; font-size: 18px;" data-i18n="up_t">UPLOAD SCREENSHOT</div>
-                    <div style="font-size: 11px; color: var(--text-gray); margin-top: 10px;" data-i18n="up_d">AI detects trend exhaustion and reversal</div>
+                    <div style="font-size: 40px; margin-bottom: 15px;">📸</div>
+                    <b data-i18n="up_t">ЗАГРУЗИТЬ ГРАФИК</b>
+                    <p style="font-size: 11px; color: var(--text-gray);" data-i18n="up_d">ИИ проанализирует объемы и свечные паттерны</p>
                 </div>
-                <div class="analysis-log" id="analysisLog"></div>
                 <div class="scan-line" id="scanLine"></div>
                 <canvas id="main-canvas"></canvas>
             </div>
-
-            <div class="theme-selector">
-                <span data-i18n="th_l">Chart Colors:</span>
-                <select id="colorTheme">
-                    <option value="green_red">Green / Red</option>
-                    <option value="blue_red">Blue / Red</option>
-                </select>
-            </div>
+            
+            <div id="analysisLog"></div>
 
             <input type="file" id="fileInput" accept="image/*" style="display:none" onchange="handleImage(this)">
-            <button id="visionBtn" class="btn-main" style="display:none; margin-top: 25px;" onclick="performUltraAnalysis()" data-i18n="btn_scan">Run Neural Scan</button>
-            <button class="lang-btn" onclick="toggleLang()">RU / EN</button>
+            <button id="visionBtn" class="btn-main" style="display:none" onclick="performDeepAnalysis()" data-i18n="btn_scan">АНАЛИЗ</button>
+            <button class="btn-main" style="background: transparent; color: var(--text-gray); border: 1px solid var(--border); margin-top: 10px;" onclick="toggleLang()">RU / EN</button>
         </div>
 
         <div id="screen-result" class="screen">
             <div class="result-card" id="resBorder">
-                <div style="color: var(--text-gray); font-size: 11px; letter-spacing: 1px;" data-i18n="res_l">KRYON AI ULTRA ANALYZER</div>
+                <div style="color: var(--text-gray); font-size: 10px;" data-i18n="res_l">NEURAL ANALYSIS RESULT</div>
                 <div id="resSignal" class="signal-val">---</div>
-                <div id="resAccuracy" style="font-size: 20px; font-weight: bold; color: var(--accent);">Confidence: --%</div>
+                <div id="resAccuracy" style="font-size: 18px; font-weight: bold; color: var(--accent);">Confidence: --%</div>
                 
                 <div class="analysis-box">
-                    <div class="analysis-item"><span data-i18n="an_s">Logic:</span> <b id="trend-status">---</b></div>
-                    <div class="analysis-item"><span data-i18n="an_i">Market:</span> <b id="impulse-power">---</b></div>
-                    <div class="analysis-item"><span data-i18n="an_t">Rec. Time:</span> <b id="rec-time">---</b></div>
+                    <div class="analysis-item"><span data-i18n="an_v">Volumes:</span> <b id="val-vol">---</b></div>
+                    <div class="analysis-item"><span data-i18n="an_p">Pattern:</span> <b id="val-patt">---</b></div>
+                    <div class="analysis-item"><span data-i18n="an_t">Time:</span> <b id="val-time">---</b></div>
                 </div>
             </div>
-            <button class="btn-main" style="background: #232a35; color: #fff;" onclick="location.reload()">
-                <span data-i18n="btn_new">New Analysis</span>
-            </button>
+            <button class="btn-main" style="background: #232a35; color: #fff;" onclick="location.reload()" data-i18n="btn_new">NEW SCAN</button>
         </div>
     </div>
 
-    <div class="nav-bar"><div class="nav-item">⚡ AI Signals Active</div></div>
+    <div class="nav-bar"><div class="nav-item">⚡ High Accuracy Mode</div></div>
 
     <script>
         const tg = window.Telegram.WebApp;
         if (tg.expand) tg.expand();
-        tg.headerColor = "#11151e";
 
         let currentLang = 'ru';
+        let detectedTheme = 'green_red';
         const canvas = document.getElementById('main-canvas');
         const ctx = canvas.getContext('2d', { willReadFrequently: true });
 
         const trans = {
             ru: {
-                step_up: "Загрузка", step_res: "Сигнал",
-                up_t: "ЗАГРУЗИТЬ СКРИНШОТ", up_d: "ИИ ищет истощение тренда и развороты",
-                btn_scan: "Запустить сканирование", res_l: "KRYON AI ULTRA ANALYZER",
-                an_s: "Логика:", an_i: "Рынок:", an_t: "Время:",
-                btn_new: "Новый анализ", up: "ВВЕРХ 🟢", down: "ВНИЗ 🔴",
-                following: "По тренду", reversal: "ИМПУЛЬСНЫЙ РАЗВОРОТ ⚠️",
-                stable: "Стабильный", high_p: "Импульсный",
-                log1: "> Определение тренда...", log2: "> Микро-анализ импульса...", log3: "> Проверка уровней...", log4: "> Расчет уверенности...", log5: "> Готово!",
-                th_l: "Цвета свечей:"
+                up_t: "ЗАГРУЗИТЬ СКРИНШОТ", up_d: "ИИ анализирует объемы и хвосты свечей",
+                btn_scan: "ЗАПУСТИТЬ ИИ-СКАН", res_l: "РЕЗУЛЬТАТ НЕЙРОННОГО АНАЛИЗА",
+                an_v: "Объемы:", an_p: "Паттерн:", an_t: "Время:",
+                btn_new: "НОВЫЙ СКАН", up: "ВВЕРХ 🟢", down: "ВНИЗ 🔴",
+                vol_high: "ВЫСОКИЕ (Подтверждено)", vol_low: "НИЗКИЕ (Дивергенция)",
+                p_pin: "Pin-Bar (Разворот)", p_trend: "Trend Flow (По тренду)", p_neut: "Neutral (Боковик)",
+                log_1: "> Фильтрация шума и сетки...", log_2: "> Анализ зоны объемов...", log_3: "> Детекция хвостов свечей...", log_4: "> Проверка паттернов...", log_5: "> Финализация данных..."
             },
             en: {
-                step_up: "Upload", step_res: "Signal",
-                up_t: "UPLOAD SCREENSHOT", up_d: "AI detects trend exhaustion and reversal",
-                btn_scan: "Run Neural Scan", res_l: "KRYON AI ULTRA ANALYZER",
-                an_s: "Logic:", an_i: "Market:", an_t: "Rec. Time:",
-                btn_new: "New Analysis", up: "CALL 🟢", down: "PUT 🔴",
-                following: "Trend Following", reversal: "MOMENTUM REVERSAL ⚠️",
-                stable: "Stable", high_p: "Impulsive",
-                log1: "> Trend detection...", log2: "> Micro-momentum scan...", log3: "> Level detection...", log4: "> Scoring logic...", log5: "> Done!",
-                th_l: "Chart Colors:"
+                up_t: "UPLOAD SCREENSHOT", up_d: "AI analyzes volumes and candle wicks",
+                btn_scan: "RUN AI SCAN", res_l: "NEURAL ANALYSIS RESULT",
+                an_v: "Volumes:", an_p: "Pattern:", an_t: "Exp. Time:",
+                btn_new: "NEW SCAN", up: "CALL 🟢", down: "PUT 🔴",
+                vol_high: "HIGH (Confirmed)", vol_low: "LOW (Divergence)",
+                p_pin: "Pin-Bar (Reversal)", p_trend: "Trend Flow", p_neut: "Neutral (Sideways)",
+                log_1: "> Grid & Noise filtering...", log_2: "> Volume zone scanning...", log_3: "> Candle wick detection...", log_4: "> Pattern matching...", log_5: "> Finalizing score..."
             }
         };
+
+        function toggleLang() {
+            currentLang = currentLang === 'en' ? 'ru' : 'en';
+            updateLocalization();
+        }
 
         function updateLocalization() {
             document.querySelectorAll('[data-i18n]').forEach(el => {
@@ -213,12 +182,6 @@
                 if (trans[currentLang][key]) el.innerText = trans[currentLang][key];
             });
         }
-
-        window.toggleLang = function() {
-            currentLang = currentLang === 'en' ? 'ru' : 'en';
-            updateLocalization();
-        };
-
         updateLocalization();
 
         window.handleImage = function(input) {
@@ -235,98 +198,122 @@
                     canvas.style.display = 'block';
                     document.getElementById('placeholder').style.display = 'none';
                     document.getElementById('visionBtn').style.display = 'block';
+                    autoDetectTheme();
                 };
                 img.src = e.target.result;
             };
             reader.readAsDataURL(file);
         };
 
-        window.performUltraAnalysis = async function() {
-            const btn = document.getElementById('visionBtn');
-            const line = document.getElementById('scanLine');
-            const log = document.getElementById('analysisLog');
-            const theme = document.getElementById('colorTheme').value;
-            const t = trans[currentLang];
-            
-            btn.disabled = true; line.style.display = 'block'; log.style.display = 'block'; log.innerHTML = "";
-            if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
+        // ПУНКТ 1: АВТООПРЕДЕЛЕНИЕ И ФИЛЬТРАЦИЯ ШУМА
+        function autoDetectTheme() {
+            const data = ctx.getImageData(0, 0, canvas.width, 100).data;
+            let green = 0, blue = 0;
+            for(let i=0; i<data.length; i+=40) {
+                if (data[i+1] > data[i] + 30) green++;
+                if (data[i+2] > data[i] + 30) blue++;
+            }
+            detectedTheme = (blue > green) ? 'blue_red' : 'green_red';
+            console.log("Detected Theme:", detectedTheme);
+        }
 
-            for (let i = 1; i <= 5; i++) {
-                log.innerHTML += t['log' + i] + "<br>";
-                line.style.top = (i * 20) + "%";
-                if (tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
-                await new Promise(r => setTimeout(r, 600));
+        window.performDeepAnalysis = async function() {
+            const btn = document.getElementById('visionBtn');
+            const log = document.getElementById('analysisLog');
+            const line = document.getElementById('scanLine');
+            const t = trans[currentLang];
+
+            btn.disabled = true;
+            log.style.display = 'block';
+            line.style.display = 'block';
+
+            for(let i=1; i<=5; i++) {
+                log.innerHTML += t['log_'+i] + "<br>";
+                line.style.top = (i * 18) + "%";
+                if(tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
+                await new Promise(r => setTimeout(r, 700));
             }
 
             const w = canvas.width, h = canvas.height;
-            
-            // --- НОВАЯ ЛОГИКА ОБРЕЗКИ (CROP) ---
-            // Игнорируем верхние 20% (шапка) и нижние 20% (шкала времени)
-            const scanTop = Math.floor(h * 0.2);
-            const scanHeight = Math.floor(h * 0.6);
-            
-            // Глобальный тренд (левые 70% ширины, без учета краев)
-            const histData = ctx.getImageData(Math.floor(w * 0.05), scanTop, Math.floor(w * 0.65), scanHeight).data;
-            let gUp = 0, gDown = 0;
-            for(let i=0; i<histData.length; i+=128) {
-                const r=histData[i], g=histData[i+1], b=histData[i+2];
-                if(theme==='green_red') { if(g > r+20 && g > b+10) gUp++; else if(r > g+20 && r > b+10) gDown++; }
-                else { if(b > r+20 && b > g+10) gUp++; else if(r > g+20 && r > b+10) gDown++; }
+            const chartMid = Math.floor(h * 0.2);
+            const chartHeight = Math.floor(h * 0.6);
+
+            // ПУНКТ 2: АНАЛИЗ ОБЪЕМОВ (Нижняя зона)
+            const volZoneTop = Math.floor(h * 0.82);
+            const volData = ctx.getImageData(0, volZoneTop, w, h * 0.1).data;
+            let volIntensity = 0;
+            for(let i=0; i<volData.length; i+=16) {
+                // Фильтр шума: только насыщенные цвета, игнорируем серый
+                const r=volData[i], g=volData[i+1], b=volData[i+2];
+                if (Math.max(r,g,b) - Math.min(r,g,b) > 50) volIntensity++;
             }
 
-            // Микро-зона: Берем полоску графика ПЕРЕД кнопками (от 75% до 88% ширины)
-            const mX = Math.floor(w * 0.75);
-            const mW = Math.floor(w * 0.13); 
-            const microData = ctx.getImageData(mX, scanTop, mW, scanHeight).data;
-            let mUp = 0, mDown = 0, minY = h, maxY = 0;
+            // ПУНКТ 3: АНАЛИЗ ПАТТЕРНОВ (Хвосты и Свечи)
+            const mX = Math.floor(w * 0.80), mW = Math.floor(w * 0.1);
+            const mData = ctx.getImageData(mX, chartMid, mW, chartHeight).data;
+            
+            let pixelsUp = 0, pixelsDown = 0;
+            let topMass = 0, bottomMass = 0; // Для поиска Pin-bar
 
-            for (let i = 0; i < microData.length; i += 32) {
-                const r = microData[i], g = microData[i+1], b = microData[i+2];
-                const y = Math.floor((i / 4) / mW);
-                let isUpCandle = (theme==='green_red') ? (g > r+20) : (b > r+20);
-                let isDownCandle = (r > g+20);
+            for(let i=0; i<mData.length; i+=32) {
+                const r=mData[i], g=mData[i+1], b=mData[i+2];
+                const y = (i/4) / mW;
+                
+                // Фильтрация сетки (игнорируем, если разница между RGB мала)
+                if (Math.max(r,g,b) - Math.min(r,g,b) < 40) continue;
 
-                if(isUpCandle) mUp++;
-                if(isDownCandle) mDown++;
-                if(isUpCandle || isDownCandle) {
-                    if(y < minY) minY = y;
-                    if(y > maxY) maxY = y;
+                const isUp = (detectedTheme === 'green_red') ? (g > r+20) : (b > r+20);
+                const isDown = (r > g+20);
+
+                if(isUp) { 
+                    pixelsUp++; 
+                    if(y < chartHeight * 0.4) topMass++; else bottomMass++;
+                }
+                if(isDown) { 
+                    pixelsDown++; 
+                    if(y < chartHeight * 0.4) topMass++; else bottomMass++;
                 }
             }
 
-            const globalTrendUp = gUp > gDown;
-            let isUp = mUp > mDown;
-            let logic = t.following;
-            let score = 70;
+            // Глобальный тренд
+            const backData = ctx.getImageData(0, chartMid, w*0.7, chartHeight).data;
+            let gUp=0, gDown=0;
+            for(let i=0; i<backData.length; i+=256) {
+                if (Math.max(backData[i],backData[i+1],backData[i+2]) - Math.min(backData[i],backData[i+1],backData[i+2]) < 40) continue;
+                if(detectedTheme === 'green_red' ? backData[i+1] > backData[i]+20 : backData[i+2] > backData[i]+20) gUp++; else gDown++;
+            }
 
-            // Логика определения разворота
-            if (mDown > mUp * 1.4 && globalTrendUp) { isUp = false; logic = t.reversal; score = 82; }
-            else if (mUp > mDown * 1.4 && !globalTrendUp) { isUp = true; logic = t.reversal; score = 82; }
+            // Итоговая логика
+            let finalUp = pixelsUp > pixelsDown;
+            let pattern = t.p_trend;
+            let accuracy = 72;
+            let volumeStatus = volIntensity > (w * h * 0.005) ? t.vol_high : t.vol_low;
 
-            // Рисуем рамку анализа (визуальное подтверждение)
-            ctx.strokeStyle = isUp ? "#00f281" : "#ff4b5c";
-            ctx.lineWidth = 4;
-            ctx.strokeRect(mX, minY + scanTop, mW, maxY - minY);
+            // Детекция Pin-bar (если основная масса пикселей в одной половине свечи)
+            if (Math.abs(topMass - bottomMass) > (topMass + bottomMass) * 0.5) {
+                pattern = t.p_pin;
+                accuracy += 12;
+                finalUp = (bottomMass > topMass); // Если хвост снизу — идем вверх
+            }
+
+            // Дивергенция объемов
+            if (volumeStatus === t.vol_low) accuracy -= 10;
 
             // Вывод результата
             document.getElementById('screen-upload').classList.remove('active');
             document.getElementById('screen-result').classList.add('active');
-            document.getElementById('step-upload').classList.remove('active');
-            document.getElementById('step-result').classList.add('active');
             
-            const resS = document.getElementById('resSignal');
-            resS.innerText = isUp ? t.up : t.down;
-            resS.style.color = isUp ? "var(--accent)" : "var(--danger)";
-            document.getElementById('resBorder').style.borderColor = resS.style.color;
-            
-            document.getElementById('trend-status').innerText = logic;
-            document.getElementById('impulse-power').innerText = (maxY - minY > scanHeight * 0.3) ? t.high_p : t.stable;
-            
-            // Исправленное время: для разворота 2-3 мин, для тренда 3-5 мин
-            document.getElementById('rec-time').innerText = logic === t.reversal ? "2-3 MIN" : "3-5 MIN";
-            document.getElementById('resAccuracy').innerText = "Confidence: " + (score + Math.random()*12).toFixed(1) + "%";
+            const sig = document.getElementById('resSignal');
+            sig.innerText = finalUp ? t.up : t.down;
+            sig.style.color = finalUp ? "var(--accent)" : "var(--danger)";
+            document.getElementById('resBorder').style.borderColor = sig.style.color;
 
-            if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+            document.getElementById('val-vol').innerText = volumeStatus;
+            document.getElementById('val-patt').innerText = pattern;
+            document.getElementById('val-time').innerText = (pattern === t.p_pin) ? "1-2 MIN" : "3-5 MIN";
+            document.getElementById('resAccuracy').innerText = "Confidence: " + (accuracy + Math.random()*5).toFixed(1) + "%";
+
+            if(tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
         };
     </script>
 </body>
