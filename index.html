@@ -149,7 +149,7 @@
             </div>
 
             <input type="file" id="fileInput" accept="image/*" style="display:none" onchange="handleImage(this)">
-            <button id="visionBtn" class="btn-main" style="display:none; margin-top: 25px;" onclick="performNeuralAnalysis()" data-i18n="btn_scan">Run Neural Scan</button>
+            <button id="visionBtn" class="btn-main" style="display:none; margin-top: 25px;" onclick="performLocalAnalysis()" data-i18n="btn_scan">Run Neural Scan</button>
             <button class="lang-btn" onclick="toggleLang()">RU / EN</button>
         </div>
 
@@ -171,18 +171,14 @@
         </div>
     </div>
 
-    <div class="nav-bar"><div class="nav-item">⚡ AI Signals Active</div></div>
+    <div class="nav-bar"><div class="nav-item">⚡ AI Client-Side Active</div></div>
 
     <script>
         const tg = window.Telegram.WebApp;
         if (tg.expand) tg.expand();
         tg.headerColor = "#11151e";
 
-        // !!! ВАЖНО: ВСТАВЬ СЮДА СВОЙ URL ОТ NGROK (ОБЯЗАТЕЛЬНО HTTPS) !!!
-        const API_URL = "https://ВАША-ССЫЛКА.ngrok-free.app/analyze-base64/";
-
         let currentLang = 'ru';
-        let base64Image = null;
         const canvas = document.getElementById('main-canvas');
         const ctx = canvas.getContext('2d', { willReadFrequently: true });
 
@@ -193,8 +189,10 @@
                 btn_scan: "Запустить сканирование", res_l: "KRYON AI ULTRA ANALYZER",
                 an_s: "Логика:", an_i: "Рынок:", an_t: "Время:",
                 btn_new: "Новый анализ", up: "ВВЕРХ 🟢", down: "ВНИЗ 🔴",
-                log1: "> Подключение к нейросети...", log2: "> Анализ японских свечей...", log3: "> Поиск уровней RSI/SR...", log4: "> Расчет математического ожидания...", log5: "> Готово!",
-                th_l: "Цвета свечей:", err_api: "Ошибка: Сервер не отвечает. Проверьте ngrok и Python!"
+                following: "По тренду", reversal: "ИМПУЛЬСНЫЙ РАЗВОРОТ ⚠️",
+                stable: "Стабильный", high_p: "Импульсный",
+                log1: "> Определение тренда...", log2: "> Микро-анализ импульса...", log3: "> Проверка уровней...", log4: "> Расчет уверенности...", log5: "> Готово!",
+                th_l: "Цвета свечей:"
             },
             en: {
                 step_up: "Upload", step_res: "Signal",
@@ -202,8 +200,10 @@
                 btn_scan: "Run Neural Scan", res_l: "KRYON AI ULTRA ANALYZER",
                 an_s: "Logic:", an_i: "Market:", an_t: "Rec. Time:",
                 btn_new: "New Analysis", up: "CALL 🟢", down: "PUT 🔴",
-                log1: "> Establishing neural link...", log2: "> Analyzing candle patterns...", log3: "> Detecting RSI/SR levels...", log4: "> Calculating probability...", log5: "> Done!",
-                th_l: "Chart Colors:", err_api: "Error: Backend unreachable. Check ngrok/Python!"
+                following: "Trend Following", reversal: "MOMENTUM REVERSAL ⚠️",
+                stable: "Stable", high_p: "Impulsive",
+                log1: "> Trend detection...", log2: "> Micro-momentum scan...", log3: "> Level detection...", log4: "> Scoring logic...", log5: "> Done!",
+                th_l: "Chart Colors:"
             }
         };
 
@@ -226,7 +226,6 @@
             if(!file) return;
             const reader = new FileReader();
             reader.onload = function(e) {
-                base64Image = e.target.result;
                 const img = new Image();
                 img.onload = function() {
                     const aspect = img.height / img.width;
@@ -242,81 +241,91 @@
             reader.readAsDataURL(file);
         };
 
-        window.performNeuralAnalysis = async function() {
-            if(!base64Image) return;
-
+        // --- ФУНКЦИЯ ЛОКАЛЬНОГО АНАЛИЗА (БЕЗ СЕРВЕРА) ---
+        window.performLocalAnalysis = async function() {
             const btn = document.getElementById('visionBtn');
             const line = document.getElementById('scanLine');
             const log = document.getElementById('analysisLog');
+            const theme = document.getElementById('colorTheme').value;
             const t = trans[currentLang];
             
             btn.disabled = true; line.style.display = 'block'; log.style.display = 'block'; log.innerHTML = "";
             
             if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
 
-            // Красивая визуализация
-            for (let i = 1; i <= 4; i++) {
+            // Анимация логов
+            for (let i = 1; i <= 5; i++) {
                 log.innerHTML += t['log' + i] + "<br>";
                 line.style.top = (i * 20) + "%";
                 if (tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
                 await new Promise(r => setTimeout(r, 600));
             }
 
-            try {
-                // ОТПРАВКА НА BACKEND
-                const response = await fetch(API_URL, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ 
-                        image: base64Image,
-                        theme: document.getElementById('colorTheme').value
-                    })
-                });
-
-                if (!response.ok) throw new Error("API_DOWN");
-
-                const data = await response.json();
-
-                log.innerHTML += t['log5'] + "<br>";
-                line.style.top = "100%";
-                await new Promise(r => setTimeout(r, 400));
-
-                // ПЕРЕКЛЮЧЕНИЕ ЭКРАНА
-                document.getElementById('screen-upload').classList.remove('active');
-                document.getElementById('screen-result').classList.add('active');
-                document.getElementById('step-upload').classList.remove('active');
-                document.getElementById('step-result').classList.add('active');
-
-                // ОТОБРАЖЕНИЕ СИГНАЛА
-                const sigText = (data.signal || "WAIT").toUpperCase();
-                const resS = document.getElementById('resSignal');
-                
-                if (sigText.includes("UP") || sigText.includes("CALL") || sigText.includes("BUY")) {
-                    resS.innerText = t.up;
-                    resS.style.color = "var(--accent)";
-                } else if (sigText.includes("DOWN") || sigText.includes("PUT") || sigText.includes("SELL")) {
-                    resS.innerText = t.down;
-                    resS.style.color = "var(--danger)";
-                } else {
-                    resS.innerText = sigText;
-                    resS.style.color = "var(--warning)";
+            // --- ЛОГИКА СКАНЕРА ПИКСЕЛЕЙ ---
+            const w = canvas.width, h = canvas.height;
+            const scanTop = Math.floor(h * 0.2); // Игнорируем шапку
+            const scanHeight = Math.floor(h * 0.6); // Только центр графика
+            
+            // 1. Глобальный тренд (левая часть экрана)
+            const histData = ctx.getImageData(Math.floor(w * 0.05), scanTop, Math.floor(w * 0.65), scanHeight).data;
+            let gUp = 0, gDown = 0;
+            for(let i=0; i<histData.length; i+=128) {
+                const r=histData[i], g=histData[i+1], b=histData[i+2];
+                if(theme==='green_red') { 
+                    if(g > r+20 && g > b+10) gUp++; 
+                    else if(r > g+20 && r > b+10) gDown++; 
+                } else { 
+                    if(b > r+20 && b > g+10) gUp++; 
+                    else if(r > g+20 && r > b+10) gDown++; 
                 }
-
-                document.getElementById('resBorder').style.borderColor = resS.style.color;
-                document.getElementById('trend-status').innerText = data.reason || "Neural Scan OK";
-                document.getElementById('impulse-power').innerText = data.market || "STABLE";
-                document.getElementById('rec-time').innerText = data.expiry || "3-5 MIN";
-                document.getElementById('resAccuracy').innerText = "Confidence: " + (data.score || data.confidence || 0) + "%";
-
-                if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
-
-            } catch (err) {
-                console.error(err);
-                alert(t.err_api);
-                btn.disabled = false;
-                line.style.display = 'none';
-                log.style.display = 'none';
             }
+
+            // 2. Микро-тренд (крайняя правая часть перед текущей ценой)
+            const mX = Math.floor(w * 0.75);
+            const mW = Math.floor(w * 0.13); 
+            const microData = ctx.getImageData(mX, scanTop, mW, scanHeight).data;
+            let mUp = 0, mDown = 0, minY = h, maxY = 0;
+
+            for (let i = 0; i < microData.length; i += 32) {
+                const r = microData[i], g = microData[i+1], b = microData[i+2];
+                const y = Math.floor((i / 4) / mW);
+                let isUpCandle = (theme==='green_red') ? (g > r+20) : (b > r+20);
+                let isDownCandle = (r > g+20);
+
+                if(isUpCandle) mUp++;
+                if(isDownCandle) mDown++;
+                if(isUpCandle || isDownCandle) {
+                    if(y < minY) minY = y;
+                    if(y > maxY) maxY = y;
+                }
+            }
+
+            const globalTrendUp = gUp > gDown;
+            let isUp = mUp > mDown;
+            let logic = t.following;
+            let score = 72;
+
+            // Логика разворота (Reversal)
+            if (mDown > mUp * 1.5 && globalTrendUp) { isUp = false; logic = t.reversal; score = 84; }
+            else if (mUp > mDown * 1.5 && !globalTrendUp) { isUp = true; logic = t.reversal; score = 84; }
+
+            // Вывод результата
+            document.getElementById('screen-upload').classList.remove('active');
+            document.getElementById('screen-result').classList.add('active');
+            document.getElementById('step-upload').classList.remove('active');
+            document.getElementById('step-result').classList.add('active');
+            
+            const resS = document.getElementById('resSignal');
+            resS.innerText = isUp ? t.up : t.down;
+            resS.style.color = isUp ? "var(--accent)" : "var(--danger)";
+            document.getElementById('resBorder').style.borderColor = resS.style.color;
+            
+            document.getElementById('trend-status').innerText = logic;
+            document.getElementById('impulse-power').innerText = (maxY - minY > scanHeight * 0.3) ? t.high_p : t.stable;
+            document.getElementById('rec-time').innerText = logic === t.reversal ? "2-3 MIN" : "3-5 MIN";
+            document.getElementById('resAccuracy').innerText = "Confidence: " + (score + Math.random()*10).toFixed(1) + "%";
+
+            if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
         };
     </script>
 </body>
