@@ -2,22 +2,19 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Trading Scanner Pro</title>
+  <title>AI Market Scanner</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
   <style>
     body {
-      font-family: Arial, sans-serif;
+      font-family: Arial;
       background: #0b1220;
       color: white;
       padding: 20px;
-      margin: 0;
     }
 
     h1 {
       text-align: center;
-      font-size: 22px;
     }
 
     .card {
@@ -27,7 +24,11 @@
       margin-top: 15px;
       position: relative;
       overflow: hidden;
-      border: 1px solid #1e293b;
+    }
+
+    input {
+      width: 100%;
+      margin-top: 10px;
     }
 
     button {
@@ -38,22 +39,9 @@
       background: linear-gradient(90deg, #22c55e, #16a34a);
       color: white;
       font-size: 16px;
-      font-weight: bold;
-      cursor: pointer;
-      margin-top: 10px;
     }
 
-    button:active {
-      transform: scale(0.98);
-    }
-
-    input {
-      width: 100%;
-      margin-top: 10px;
-      color: white;
-    }
-
-    /* 🔥 SCANNER ANIMATION */
+    /* 🔥 SCANNER */
     .scanner-line {
       position: absolute;
       width: 100%;
@@ -61,7 +49,7 @@
       background: linear-gradient(90deg, transparent, #22c55e, transparent);
       top: 0;
       left: 0;
-      animation: scan 2s linear infinite;
+      animation: scan 1.8s linear infinite;
       display: none;
     }
 
@@ -71,18 +59,22 @@
       100% { top: 100%; opacity: 0.2; }
     }
 
+    img {
+      width: 100%;
+      margin-top: 10px;
+      border-radius: 10px;
+      display: none;
+    }
+
     .signal {
       font-size: 34px;
       text-align: center;
       font-weight: bold;
       margin-top: 15px;
+      animation: pulse 1.5s infinite;
     }
 
-    .pulse {
-      animation: pulse-anim 1.5s infinite;
-    }
-
-    @keyframes pulse-anim {
+    @keyframes pulse {
       0% { opacity: 1; }
       50% { opacity: 0.4; }
       100% { opacity: 1; }
@@ -93,20 +85,8 @@
     .wait { color: #eab308; }
 
     .box {
-      margin-top: 15px;
+      margin-top: 10px;
       font-size: 14px;
-      line-height: 1.6;
-      background: rgba(255,255,255,0.05);
-      padding: 10px;
-      border-radius: 8px;
-    }
-
-    .strategy {
-      margin-top: 15px;
-      padding: 10px;
-      background: #0f172a;
-      border-radius: 10px;
-      font-size: 13px;
     }
 
     .tag {
@@ -114,20 +94,18 @@
       padding: 4px 8px;
       border-radius: 6px;
       margin: 3px;
-      font-size: 11px;
-      font-weight: bold;
-      text-transform: uppercase;
+      font-size: 12px;
+      background: #1e293b;
     }
 
-    .green { background: #14532d; color: #4ade80; }
-    .red { background: #7f1d1d; color: #f87171; }
+    .green { background: #14532d; }
+    .red { background: #7f1d1d; }
 
     .loading {
       text-align: center;
       margin-top: 10px;
       color: #60a5fa;
       display: none;
-      font-size: 14px;
     }
   </style>
 </head>
@@ -140,29 +118,58 @@
   <div class="scanner-line" id="scanner"></div>
 
   <input type="file" id="fileInput" accept="image/*" />
-  <button onclick="analyze()">SCAN MARKET</button>
+  <button onclick="analyze()">Scan Market</button>
 
-  <div class="loading" id="loading">Scanning market structure...</div>
+  <img id="preview" />
+  <div class="loading" id="loading">Scanning chart with AI...</div>
 </div>
 
 <div class="card">
-  <div class="signal pulse" id="signal">WAIT</div>
+
+  <div class="signal" id="signal">WAIT</div>
 
   <div class="box">
-    <b>Score:</b> <span id="score">-</span><br>
-    <b>Expiry:</b> <span id="expiry">-</span><br>
-    <b>Accuracy:</b> <span id="accuracy">-</span>
+    Score: <span id="score">-</span><br>
+    Expiry: <span id="expiry">-</span><br>
+    Accuracy: <span id="accuracy">-</span>%
   </div>
 
-  <div class="strategy">
-    <b>Multi-Strategy Engine:</b><br>
-    <div id="strategies" style="margin-top: 8px;"></div>
+  <div class="box">
+    <b>Strategies:</b>
+    <div id="strategies"></div>
   </div>
+
 </div>
 
 <script>
   const tg = window.Telegram.WebApp;
   tg.expand();
+
+  let base64Image = null;
+
+  // 📸 convert to base64 (IMPORTANT for mobile screenshots)
+  document.getElementById("fileInput").addEventListener("change", function(e) {
+    const file = e.target.files[0];
+
+    const reader = new FileReader();
+    reader.onload = function(event) {
+      base64Image = event.target.result;
+
+      const img = document.getElementById("preview");
+      img.src = base64Image;
+      img.style.display = "block";
+    };
+
+    reader.readAsDataURL(file);
+  });
+
+  function scanOn() {
+    document.getElementById("scanner").style.display = "block";
+  }
+
+  function scanOff() {
+    document.getElementById("scanner").style.display = "none";
+  }
 
   function getExpiry(score) {
     if (score >= 85) return "5 min";
@@ -171,84 +178,65 @@
     return "NO TRADE";
   }
 
-  function showScanner() {
-    document.getElementById("scanner").style.display = "block";
-    document.getElementById("loading").style.display = "block";
-  }
-
-  function hideScanner() {
-    document.getElementById("scanner").style.display = "none";
-    document.getElementById("loading").style.display = "none";
-  }
-
   async function analyze() {
-    const fileInput = document.getElementById("fileInput");
-    const file = fileInput.files[0];
 
-    if (!file) {
-      alert("Please upload a screenshot first!");
+    if (!base64Image) {
+      alert("Upload screenshot");
       return;
     }
 
-    showScanner();
-
-    const formData = new FormData();
-    formData.append("file", file);
+    scanOn();
+    document.getElementById("loading").style.display = "block";
 
     try {
-      // ПРИМЕЧАНИЕ: Если работаете через Telegram, используйте https:// и реальный домен
-      const res = await fetch("http://localhost:8000/analyze/", {
+
+      const res = await fetch("http://localhost:8000/analyze-base64/", {
         method: "POST",
-        body: formData
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          image: base64Image
+        })
+      });
+    
+    const data = await res.json();
+
+      scanOff();
+      document.getElementById("loading").style.display = "none";
+
+      // signal
+      document.getElementById("signal").innerText = data.signal;
+
+      // score
+      document.getElementById("score").innerText = data.score;
+
+      // expiry
+      document.getElementById("expiry").innerText =
+        getExpiry(data.score);
+
+      // accuracy
+      document.getElementById("accuracy").innerText =
+        data.accuracy  0;
+
+      // strategies
+      const el = document.getElementById("strategies");
+      el.innerHTML = "";
+
+      const strategies = data.strategies  {};
+
+      Object.keys(strategies).forEach(k => {
+        const tag = document.createElement("div");
+        tag.className = "tag " + (strategies[k] ? "green" : "red");
+        tag.innerText = (strategies[k] ? "✔️ " : "✖️ ") + k;
+        el.appendChild(tag);
       });
 
-      if (!res.ok) throw new Error("Server error: " + res.status);
-
-      const data = await res.json();
-
-      hideScanner();
-
-      // Отображение сигнала (BUY/SELL/WAIT)
-      const signalEl = document.getElementById("signal");
-      const signalValue = data.signal || "WAIT";
-      signalEl.innerText = signalValue;
-      
-      // Сброс и установка цвета
-      signalEl.className = "signal pulse"; 
-      if (signalValue.toLowerCase().includes("buy")) signalEl.classList.add("buy");
-      else if (signalValue.toLowerCase().includes("sell")) signalEl.classList.add("sell");
-      else signalEl.classList.add("wait");
-
-      // Данные
-      const score = data.score || 0;
-      document.getElementById("score").innerText = score;
-      document.getElementById("expiry").innerText = getExpiry(score);
-      document.getElementById("accuracy").innerText = (data.accuracy || 0) + "%";
-
-      // Стратегии
-      const strategiesEl = document.getElementById("strategies");
-      strategiesEl.innerHTML = "";
-
-      const strategies = data.strategies || {
-        supertrend: false,
-        ema200: false,
-        rsi: false,
-        macd: false,
-        volume: false
-      };
-
-      for (let key in strategies) {
-        const ok = strategies[key];
-        const tag = document.createElement("div");
-        tag.className = "tag " + (ok ? "green" : "red");
-        tag.innerText = (ok ? "✔️ " : "✖️ ") + key.toUpperCase();
-        strategiesEl.appendChild(tag);
-      }
-
-    } catch (err) {
-      console.error(err);
-      alert("Error: " + err.message);
-      hideScanner();
+    } catch (e) {
+      console.error(e);
+      scanOff();
+      document.getElementById("loading").style.display = "none";
+      alert("Backend error");
     }
   }
 </script>
