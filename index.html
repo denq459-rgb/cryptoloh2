@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Kryon AI Trade Bot - Ultra Vision</title>
+    <title>Kryon AI Trade Bot - Real Analysis</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
             --bg-color: #0c0f17;
             --card-bg: #161a24;
             --accent: #00f281;
+            --accent-blue: #00d4ff;
             --text-main: #ffffff;
             --text-gray: #7a828a;
             --border: #232a35;
@@ -17,110 +18,497 @@
             --warning: #ff9d00;
         }
 
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
         body {
             background-color: var(--bg-color);
             color: var(--text-main);
-            font-family: 'Inter', -apple-system, sans-serif;
-            margin: 0; padding: 0;
-            overflow-x: hidden;
-            overflow-y: auto;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
+            overflow-x: hidden;
         }
 
         .app-header {
             padding: 25px 15px 15px;
             text-align: center;
-            background: linear-gradient(to bottom, #11151e, var(--bg-color));
+            background: linear-gradient(180deg, #11151e 0%, var(--bg-color) 100%);
             border-bottom: 1px solid var(--border);
             flex-shrink: 0;
         }
-        .header-logo {
-            width: 40px; height: 40px;
-            background: var(--card-bg);
-            border-radius: 12px;
-            display: inline-flex; align-items: center; justify-content: center;
-            border: 1px solid var(--accent);
-            margin-bottom: 10px; color: var(--accent); font-size: 22px;
-            box-shadow: 0 0 15px rgba(0, 242, 129, 0.15);
-        }
-        .app-title { font-size: 22px; font-weight: 800; margin: 0; letter-spacing: 0.5px; }
-        .app-subtitle { font-size: 11px; color: var(--accent); text-transform: uppercase; letter-spacing: 1px; margin-top: 5px; }
-        
-        .steps-bar {
-            display: inline-flex; gap: 20px;
-            background: #11151e; padding: 8px 20px;
-            border-radius: 20px; font-size: 11px; color: var(--text-gray);
-            margin-top: 20px; font-weight: bold; border: 1px solid #1a1f29;
-        }
-        .steps-bar span.active { color: var(--text-main); display: flex; align-items: center; gap: 6px; }
-        .steps-bar span.active::before { content: '●'; color: var(--accent); }
 
-        .content { 
-            flex: 1; 
-            padding: 20px 15px;
-            padding-bottom: 120px; 
+        .header-logo {
+            width: 48px;
+            height: 48px;
+            background: var(--card-bg);
+            border-radius: 14px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid var(--accent);
+            margin-bottom: 12px;
+            font-size: 24px;
+            box-shadow: 0 0 20px rgba(0, 242, 129, 0.2);
+            animation: pulse 2s infinite;
         }
-        
-        .screen { display: none; animation: fadeIn 0.3s ease; }
-        .screen.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 20px rgba(0, 242, 129, 0.2); }
+            50% { box-shadow: 0 0 30px rgba(0, 242, 129, 0.4); }
+        }
+
+        .app-title {
+            font-size: 24px;
+            font-weight: 800;
+            margin: 0;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #fff 0%, #00f281 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .app-subtitle {
+            font-size: 11px;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-top: 5px;
+            font-weight: 600;
+        }
+
+        .mode-selector {
+            display: flex;
+            gap: 8px;
+            margin-top: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .mode-btn {
+            padding: 8px 16px;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            color: var(--text-gray);
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+        }
+
+        .mode-btn.active {
+            background: rgba(0, 242, 129, 0.1);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .steps-bar {
+            display: inline-flex;
+            gap: 20px;
+            background: #11151e;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 11px;
+            color: var(--text-gray);
+            margin-top: 20px;
+            font-weight: bold;
+            border: 1px solid #1a1f29;
+        }
+
+        .steps-bar span {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.3s;
+        }
+
+        .steps-bar span.active {
+            color: var(--text-main);
+        }
+
+        .steps-bar span.active::before {
+            content: '●';
+            color: var(--accent);
+            animation: blink 1.5s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        .content {
+            flex: 1;
+            padding: 20px 15px;
+            padding-bottom: 100px;
+        }
+
+        .screen {
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(15px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
 
         .upload-area {
             border: 2px dashed var(--border);
             border-radius: 24px;
-            padding: 55px 15px;
+            padding: 40px 15px;
             text-align: center;
-            background: rgba(255,255,255,0.02);
+            background: rgba(255, 255, 255, 0.02);
             position: relative;
             overflow: hidden;
             cursor: pointer;
-            transition: 0.3s;
+            transition: all 0.3s;
+            min-height: 300px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
         }
 
-        #main-canvas { width: 100%; border-radius: 12px; display: none; margin-top: 10px; border: 1px solid var(--border); }
-        .scan-line { position: absolute; left: 0; width: 100%; height: 3px; background: var(--accent); box-shadow: 0 0 20px var(--accent); display: none; z-index: 10; pointer-events: none; }
-        .analysis-log { position: absolute; top: 10px; left: 10px; font-family: monospace; font-size: 9px; color: var(--accent); text-align: left; z-index: 11; display: none; background: rgba(0,0,0,0.8); padding: 5px; border-radius: 4px; line-height: 1.4; pointer-events: none; }
+        .upload-area:hover {
+            border-color: var(--accent);
+            background: rgba(0, 242, 129, 0.03);
+        }
+
+        .upload-area.has-image {
+            border-style: solid;
+            border-color: var(--accent);
+            padding: 10px;
+        }
+
+        #main-canvas {
+            width: 100%;
+            border-radius: 12px;
+            display: none;
+            border: 1px solid var(--border);
+        }
+
+        .scan-overlay {
+            position: absolute;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
+            box-shadow: 0 0 30px var(--accent), 0 0 60px var(--accent);
+            display: none;
+            z-index: 10;
+            pointer-events: none;
+            transition: top 0.1s linear;
+        }
+
+        .analysis-log {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 10px;
+            color: var(--accent);
+            text-align: left;
+            z-index: 11;
+            display: none;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 10px 15px;
+            border-radius: 8px;
+            line-height: 1.6;
+            border: 1px solid var(--border);
+            backdrop-filter: blur(10px);
+        }
+
+        .live-input {
+            display: none;
+            margin-top: 15px;
+        }
+
+        .live-input.active {
+            display: block;
+        }
+
+        .symbol-input {
+            width: 100%;
+            padding: 15px;
+            background: var(--card-bg);
+            border: 2px solid var(--border);
+            border-radius: 14px;
+            color: #fff;
+            font-size: 16px;
+            font-weight: 600;
+            text-align: center;
+            letter-spacing: 2px;
+            transition: all 0.3s;
+        }
+
+        .symbol-input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 20px rgba(0, 242, 129, 0.1);
+        }
 
         .theme-selector {
-            margin-top: 15px; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 12px; color: var(--text-gray);
+            margin-top: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-size: 12px;
+            color: var(--text-gray);
         }
-        .theme-selector select { background: var(--card-bg); color: #fff; border: 1px solid var(--border); padding: 5px; border-radius: 8px; outline: none; }
 
-        .result-card { 
-            background: var(--card-bg); border-radius: 28px; padding: 35px 20px; text-align: center; border: 2px solid var(--border); margin-bottom: 20px;
+        .theme-selector select {
+            background: var(--card-bg);
+            color: #fff;
+            border: 1px solid var(--border);
+            padding: 8px 12px;
+            border-radius: 10px;
+            outline: none;
+            font-size: 12px;
+            cursor: pointer;
         }
-        .signal-val { font-size: 52px; font-weight: 900; margin: 15px 0; letter-spacing: 1px; }
-        
-        .analysis-box {
-            background: #11151e; border-radius: 14px; padding: 15px; margin-top: 25px; text-align: left; border-left: 3px solid var(--accent);
+
+        .result-card {
+            background: var(--card-bg);
+            border-radius: 28px;
+            padding: 35px 20px;
+            text-align: center;
+            border: 2px solid var(--border);
+            margin-bottom: 20px;
+            transition: all 0.5s;
+            position: relative;
+            overflow: hidden;
         }
-        .analysis-item { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 8px; color: var(--text-gray); }
-        .analysis-item b { color: #fff; text-align: right; }
+
+        .result-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--accent);
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+
+        .result-card.has-signal::before {
+            opacity: 1;
+        }
+
+        .signal-val {
+            font-size: 56px;
+            font-weight: 900;
+            margin: 15px 0;
+            letter-spacing: 1px;
+            transition: color 0.5s;
+        }
+
+        .signal-confidence {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .confidence-bar {
+            width: 120px;
+            height: 6px;
+            background: var(--border);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .confidence-fill {
+            height: 100%;
+            background: var(--accent);
+            transition: width 1s ease;
+            border-radius: 3px;
+        }
+
+        .analysis-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 25px;
+        }
+
+        .analysis-item {
+            background: #11151e;
+            border-radius: 12px;
+            padding: 15px;
+            text-align: left;
+            border: 1px solid #1a1f29;
+        }
+
+        .analysis-item .label {
+            font-size: 10px;
+            color: var(--text-gray);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+        }
+
+        .analysis-item .value {
+            font-size: 14px;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .patterns-detected {
+            background: #11151e;
+            border-radius: 14px;
+            padding: 20px;
+            margin-top: 20px;
+            border-left: 3px solid var(--accent-blue);
+        }
+
+        .pattern-tag {
+            display: inline-block;
+            padding: 5px 12px;
+            margin: 4px;
+            background: rgba(0, 212, 255, 0.1);
+            border: 1px solid var(--accent-blue);
+            border-radius: 15px;
+            font-size: 11px;
+            color: var(--accent-blue);
+            font-weight: 600;
+        }
 
         .btn-main {
-            width: 100%; padding: 22px; background: var(--accent); color: #000; border: none; border-radius: 18px; font-weight: 800; font-size: 16px; cursor: pointer; text-transform: uppercase; box-shadow: 0 5px 20px rgba(0, 242, 129, 0.3); transition: 0.2s; margin-bottom: 20px;
+            width: 100%;
+            padding: 22px;
+            background: var(--accent);
+            color: #000;
+            border: none;
+            border-radius: 18px;
+            font-weight: 800;
+            font-size: 16px;
+            cursor: pointer;
+            text-transform: uppercase;
+            box-shadow: 0 5px 25px rgba(0, 242, 129, 0.3);
+            transition: all 0.3s;
+            margin-bottom: 20px;
+            letter-spacing: 1px;
         }
-        .btn-main:active { transform: scale(0.98); }
-        .btn-main:disabled { background: #232a35; color: #555; box-shadow: none; cursor: not-allowed; }
+
+        .btn-main:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(0, 242, 129, 0.4);
+        }
+
+        .btn-main:active {
+            transform: scale(0.98);
+        }
+
+        .btn-main:disabled {
+            background: #232a35;
+            color: #555;
+            box-shadow: none;
+            cursor: not-allowed;
+            transform: none;
+        }
 
         .lang-btn {
-            background: #161a24; color: var(--accent); border: 1px solid var(--border); padding: 8px 16px; border-radius: 10px; font-size: 11px; font-weight: bold; cursor: pointer; margin: 10px auto 0; display: block;
+            background: #161a24;
+            color: var(--accent);
+            border: 1px solid var(--border);
+            padding: 10px 20px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 10px auto 0;
+            display: block;
+            transition: all 0.3s;
+        }
+
+        .lang-btn:hover {
+            background: #1a1f29;
+        }
+
+        .disclaimer {
+            background: rgba(255, 75, 92, 0.1);
+            border: 1px solid var(--danger);
+            border-radius: 12px;
+            padding: 15px;
+            margin-top: 20px;
+            font-size: 10px;
+            color: var(--danger);
+            text-align: center;
+            line-height: 1.5;
         }
 
         .nav-bar {
-            position: fixed; bottom: 0; width: 100%; background: #11151e; border-top: 1px solid var(--border); padding: 15px 0 35px 0; text-align: center; z-index: 1000;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            background: #11151e;
+            border-top: 1px solid var(--border);
+            padding: 12px 0 30px 0;
+            text-align: center;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
         }
-        .nav-item { color: var(--accent); font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
+
+        .nav-item {
+            color: var(--accent);
+            font-size: 10px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .nav-item .dot {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            background: var(--accent);
+            border-radius: 50%;
+            animation: pulse-dot 1.5s infinite;
+            margin-right: 6px;
+        }
+
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.5); }
+        }
     </style>
 </head>
 <body>
 
     <div class="app-header">
-        <div class="header-logo">📈</div>
+        <div class="header-logo">📊</div>
         <h1 class="app-title">Kryon AI Trade Bot</h1>
-        <p class="app-subtitle">Ultra Momentum Vision v4</p>
+        <p class="app-subtitle">Real Pattern Recognition v5.0</p>
+        
+        <div class="mode-selector">
+            <button class="mode-btn active" onclick="switchMode('image')" data-i18n="mode_img">
+                📸 Screenshot
+            </button>
+            <button class="mode-btn" onclick="switchMode('live')" data-i18n="mode_live">
+                🔴 Live Data
+            </button>
+        </div>
+        
         <div class="steps-bar">
             <span id="step-upload" class="active" data-i18n="step_up">Upload</span>
             <span id="step-result" data-i18n="step_res">Signal</span>
@@ -128,16 +516,29 @@
     </div>
 
     <div class="content">
+        <!-- Экран загрузки -->
         <div id="screen-upload" class="screen active">
-            <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+            <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
                 <div id="placeholder">
-                    <div style="font-size: 55px; margin-bottom: 20px;">🖼️</div>
-                    <div style="font-weight: 800; font-size: 18px;" data-i18n="up_t">UPLOAD SCREENSHOT</div>
-                    <div style="font-size: 11px; color: var(--text-gray); margin-top: 10px;" data-i18n="up_d">AI detects trend exhaustion and reversal</div>
+                    <div style="font-size: 60px; margin-bottom: 20px;">📈</div>
+                    <div style="font-weight: 800; font-size: 18px;" data-i18n="up_t">UPLOAD CHART SCREENSHOT</div>
+                    <div style="font-size: 11px; color: var(--text-gray); margin-top: 10px;" data-i18n="up_d">
+                        AI detects real patterns: Doji, Engulfing, Support/Resistance
+                    </div>
                 </div>
                 <div class="analysis-log" id="analysisLog"></div>
-                <div class="scan-line" id="scanLine"></div>
+                <div class="scan-overlay" id="scanLine"></div>
                 <canvas id="main-canvas"></canvas>
+            </div>
+
+            <!-- Режим Live Data -->
+            <div class="live-input" id="liveInput">
+                <input type="text" class="symbol-input" id="symbolInput" 
+                       placeholder="BTCUSDT" value="BTCUSDT" 
+                       data-i18n-placeholder="symbol_ph">
+                <div style="font-size: 10px; color: var(--text-gray); margin-top: 8px; text-align: center;">
+                    Supported: BTCUSDT, ETHUSDT, EURUSD, GBPUSD
+                </div>
             </div>
 
             <div class="theme-selector">
@@ -149,68 +550,169 @@
             </div>
 
             <input type="file" id="fileInput" accept="image/*" style="display:none" onchange="handleImage(this)">
-            <button id="visionBtn" class="btn-main" style="display:none; margin-top: 25px;" onclick="performLocalAnalysis()" data-i18n="btn_scan">Run Neural Scan</button>
+            <button id="actionBtn" class="btn-main" style="display:none; margin-top: 25px;" 
+                    onclick="performRealAnalysis()" data-i18n="btn_scan">
+                Run Analysis
+            </button>
             <button class="lang-btn" onclick="toggleLang()">RU / EN</button>
         </div>
 
+        <!-- Экран результатов -->
         <div id="screen-result" class="screen">
             <div class="result-card" id="resBorder">
-                <div style="color: var(--text-gray); font-size: 11px; letter-spacing: 1px;" data-i18n="res_l">KRYON AI ULTRA ANALYZER</div>
+                <div style="color: var(--text-gray); font-size: 11px; letter-spacing: 2px;" 
+                     data-i18n="res_l">
+                    KRYON AI PATTERN RECOGNITION
+                </div>
                 <div id="resSignal" class="signal-val">---</div>
-                <div id="resAccuracy" style="font-size: 20px; font-weight: bold; color: var(--accent);">Confidence: --%</div>
                 
-                <div class="analysis-box">
-                    <div class="analysis-item"><span data-i18n="an_s">Logic:</span> <b id="trend-status">---</b></div>
-                    <div class="analysis-item"><span data-i18n="an_i">Market:</span> <b id="impulse-power">---</b></div>
-                    <div class="analysis-item"><span data-i18n="an_t">Rec. Time:</span> <b id="rec-time">---</b></div>
+                <div class="signal-confidence">
+                    <span style="font-size: 12px; color: var(--text-gray);">Confidence</span>
+                    <div class="confidence-bar">
+                        <div class="confidence-fill" id="confFill" style="width: 0%"></div>
+                    </div>
+                    <span id="resConf" style="font-size: 14px; font-weight: 700;">--%</span>
+                </div>
+
+                <div class="analysis-grid">
+                    <div class="analysis-item">
+                        <div class="label" data-i18n="an_pat">Pattern</div>
+                        <div class="value" id="pattern">---</div>
+                    </div>
+                    <div class="analysis-item">
+                        <div class="label" data-i18n="an_trend">Trend</div>
+                        <div class="value" id="trend">---</div>
+                    </div>
+                    <div class="analysis-item">
+                        <div class="label" data-i18n="an_str">Strength</div>
+                        <div class="value" id="strength">---</div>
+                    </div>
+                    <div class="analysis-item">
+                        <div class="label" data-i18n="an_time">Timeframe</div>
+                        <div class="value" id="timeframe">---</div>
+                    </div>
+                </div>
+
+                <div class="patterns-detected" id="patternsBox" style="display:none;">
+                    <div style="font-size: 10px; color: var(--accent-blue); letter-spacing: 1px; margin-bottom: 8px;">
+                        📐 DETECTED PATTERNS
+                    </div>
+                    <div id="patternTags"></div>
                 </div>
             </div>
-            <button class="btn-main" style="background: #232a35; color: #fff;" onclick="location.reload()">
+
+            <div class="disclaimer">
+                ⚠️ RISK WARNING: This is a technical analysis tool, not financial advice. 
+                Trading involves substantial risk of loss. Past performance does not guarantee future results.
+            </div>
+
+            <button class="btn-main" style="background: #232a35; color: #fff; margin-top: 15px;" 
+                    onclick="location.reload()">
                 <span data-i18n="btn_new">New Analysis</span>
             </button>
         </div>
     </div>
 
-    <div class="nav-bar"><div class="nav-item">⚡ AI Client-Side Active</div></div>
+    <div class="nav-bar">
+        <div class="nav-item">
+            <span class="dot"></span> Real-Time Pattern Detection Active
+        </div>
+    </div>
 
     <script>
+        // ============ ИНИЦИАЛИЗАЦИЯ TELEGRAM ============
         const tg = window.Telegram.WebApp;
         if (tg.expand) tg.expand();
         tg.headerColor = "#11151e";
+        tg.backgroundColor = "#0c0f17";
 
-        let currentLang = 'ru';
+        // ============ ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ============
+        let currentLang = 'en';
+        let currentMode = 'image';
+        let imageLoaded = false;
+        
         const canvas = document.getElementById('main-canvas');
         const ctx = canvas.getContext('2d', { willReadFrequently: true });
 
+        // ============ ПЕРЕВОДЫ ============
         const trans = {
-            ru: {
-                step_up: "Загрузка", step_res: "Сигнал",
-                up_t: "ЗАГРУЗИТЬ СКРИНШОТ", up_d: "ИИ ищет истощение тренда и развороты",
-                btn_scan: "Запустить сканирование", res_l: "KRYON AI ULTRA ANALYZER",
-                an_s: "Логика:", an_i: "Рынок:", an_t: "Время:",
-                btn_new: "Новый анализ", up: "ВВЕРХ 🟢", down: "ВНИЗ 🔴",
-                following: "По тренду", reversal: "ИМПУЛЬСНЫЙ РАЗВОРОТ ⚠️",
-                stable: "Стабильный", high_p: "Импульсный",
-                log1: "> Определение тренда...", log2: "> Микро-анализ импульса...", log3: "> Проверка уровней...", log4: "> Расчет уверенности...", log5: "> Готово!",
-                th_l: "Цвета свечей:"
-            },
             en: {
                 step_up: "Upload", step_res: "Signal",
-                up_t: "UPLOAD SCREENSHOT", up_d: "AI detects trend exhaustion and reversal",
-                btn_scan: "Run Neural Scan", res_l: "KRYON AI ULTRA ANALYZER",
-                an_s: "Logic:", an_i: "Market:", an_t: "Rec. Time:",
-                btn_new: "New Analysis", up: "CALL 🟢", down: "PUT 🔴",
-                following: "Trend Following", reversal: "MOMENTUM REVERSAL ⚠️",
-                stable: "Stable", high_p: "Impulsive",
-                log1: "> Trend detection...", log2: "> Micro-momentum scan...", log3: "> Level detection...", log4: "> Scoring logic...", log5: "> Done!",
-                th_l: "Chart Colors:"
+                mode_img: "📸 Screenshot", mode_live: "🔴 Live Data",
+                up_t: "UPLOAD CHART SCREENSHOT",
+                up_d: "AI detects: Doji, Engulfing, Support/Resistance",
+                btn_scan: "Run Pattern Analysis",
+                res_l: "KRYON AI PATTERN RECOGNITION",
+                an_pat: "Pattern", an_trend: "Trend",
+                an_str: "Strength", an_time: "Timeframe",
+                btn_new: "New Analysis",
+                call: "CALL 🟢", put: "PUT 🔴",
+                neutral: "NEUTRAL ⚪",
+                doji: "Doji (Reversal)", 
+                engulfing: "Engulfing", 
+                hammer: "Hammer",
+                shooting_star: "Shooting Star",
+                morning_star: "Morning Star",
+                evening_star: "Evening Star",
+                bullish: "Bullish ▲", 
+                bearish: "Bearish ▼",
+                sideways: "Sideways ▶",
+                strong: "Strong", 
+                moderate: "Moderate", 
+                weak: "Weak",
+                th_l: "Chart Colors:",
+                scanning: "Scanning chart structure...",
+                detecting: "Detecting candles...",
+                patterns: "Identifying patterns...",
+                levels: "Finding support/resistance...",
+                scoring: "Calculating signal strength...",
+                done: "Analysis complete ✓",
+                symbol_ph: "Enter symbol (e.g. BTCUSDT)"
+            },
+            ru: {
+                step_up: "Загрузка", step_res: "Сигнал",
+                mode_img: "📸 Скриншот", mode_live: "🔴 Live",
+                up_t: "ЗАГРУЗИТЕ СКРИНШОТ",
+                up_d: "ИИ находит: Доджи, Поглощение, Уровни",
+                btn_scan: "Запустить анализ",
+                res_l: "KRYON AI АНАЛИЗ ПАТТЕРНОВ",
+                an_pat: "Паттерн", an_trend: "Тренд",
+                an_str: "Сила", an_time: "Таймфрейм",
+                btn_new: "Новый анализ",
+                call: "CALL 🟢", put: "PUT 🔴",
+                neutral: "НЕЙТРАЛЬНО ⚪",
+                doji: "Доджи (Разворот)",
+                engulfing: "Поглощение",
+                hammer: "Молот",
+                shooting_star: "Падающая звезда",
+                morning_star: "Утренняя звезда",
+                evening_star: "Вечерняя звезда",
+                bullish: "Бычий ▲", 
+                bearish: "Медвежий ▼",
+                sideways: "Боковой ▶",
+                strong: "Сильный", 
+                moderate: "Умеренный", 
+                weak: "Слабый",
+                th_l: "Цвета свечей:",
+                scanning: "Сканирование структуры...",
+                detecting: "Определение свечей...",
+                patterns: "Поиск паттернов...",
+                levels: "Поиск уровней поддержки...",
+                scoring: "Расчет силы сигнала...",
+                done: "Анализ завершен ✓",
+                symbol_ph: "Введите символ (напр. BTCUSDT)"
             }
         };
 
+        // ============ ЛОКАЛИЗАЦИЯ ============
         function updateLocalization() {
             document.querySelectorAll('[data-i18n]').forEach(el => {
                 const key = el.getAttribute('data-i18n');
                 if (trans[currentLang][key]) el.innerText = trans[currentLang][key];
+            });
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-i18n-placeholder');
+                if (trans[currentLang][key]) el.placeholder = trans[currentLang][key];
             });
         }
 
@@ -219,114 +721,260 @@
             updateLocalization();
         };
 
-        updateLocalization();
+        // ============ СМЕНА РЕЖИМА ============
+        window.switchMode = function(mode) {
+            currentMode = mode;
+            document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+            
+            if (mode === 'image') {
+                document.querySelectorAll('.mode-btn')[0].classList.add('active');
+                document.getElementById('liveInput').classList.remove('active');
+                document.getElementById('uploadArea').style.display = 'flex';
+                document.getElementById('actionBtn').style.display = imageLoaded ? 'block' : 'none';
+            } else {
+                document.querySelectorAll('.mode-btn')[1].classList.add('active');
+                document.getElementById('liveInput').classList.add('active');
+                document.getElementById('uploadArea').style.display = 'none';
+                document.getElementById('actionBtn').style.display = 'block';
+                document.getElementById('actionBtn').innerText = 'Get Live Analysis';
+            }
+        };
 
+        // ============ ЗАГРУЗКА ИЗОБРАЖЕНИЯ ============
         window.handleImage = function(input) {
             const file = input.files[0];
-            if(!file) return;
+            if (!file) return;
+
             const reader = new FileReader();
             reader.onload = function(e) {
                 const img = new Image();
                 img.onload = function() {
-                    const aspect = img.height / img.width;
-                    canvas.width = 1000; 
-                    canvas.height = 1000 * aspect;
+                    const maxWidth = 1000;
+                    const scale = maxWidth / img.width;
+                    canvas.width = maxWidth;
+                    canvas.height = img.height * scale;
+                    
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
                     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    
                     canvas.style.display = 'block';
                     document.getElementById('placeholder').style.display = 'none';
-                    document.getElementById('visionBtn').style.display = 'block';
+                    document.getElementById('uploadArea').classList.add('has-image');
+                    document.getElementById('actionBtn').style.display = 'block';
+                    imageLoaded = true;
+                };
+                img.onerror = function() {
+                    alert('Error loading image. Please try another file.');
                 };
                 img.src = e.target.result;
             };
             reader.readAsDataURL(file);
         };
 
-        // --- ФУНКЦИЯ ЛОКАЛЬНОГО АНАЛИЗА (БЕЗ СЕРВЕРА) ---
-        window.performLocalAnalysis = async function() {
-            const btn = document.getElementById('visionBtn');
-            const line = document.getElementById('scanLine');
-            const log = document.getElementById('analysisLog');
-            const theme = document.getElementById('colorTheme').value;
+        // ============ ИЗВЛЕЧЕНИЕ СВЕЧЕЙ ============
+        function extractCandles(imageData, theme) {
+            const { data, width, height } = imageData;
+            const candles = [];
+            
+            // Сканируем по вертикали для поиска тел свечей
+            for (let x = 0; x < width; x++) {
+                const column = [];
+                
+                for (let y = 0; y < height; y++) {
+                    const idx = (y * width + x) * 4;
+                    const r = data[idx];
+                    const g = data[idx + 1];
+                    const b = data[idx + 2];
+                    
+                    // Определяем цвет пикселя
+                    let color = 'neutral';
+                    if (theme === 'green_red') {
+                        if (g > r + 25 && g > b + 15) color = 'green';
+                        else if (r > g + 25 && r > b + 15) color = 'red';
+                    } else {
+                        if (b > r + 25 && b > g + 15) color = 'green';
+                        else if (r > g + 25 && r > b + 15) color = 'red';
+                    }
+                    
+                    if (color !== 'neutral') {
+                        column.push({ y, color });
+                    }
+                }
+                
+                // Группируем последовательные пиксели одного цвета в свечи
+                if (column.length > 0) {
+                    let start = column[0];
+                    for (let i = 1; i < column.length; i++) {
+                        if (column[i].color !== start.color || column[i].y - column[i-1].y > 2) {
+                            candles.push({
+                                x: x,
+                                top: start.y,
+                                bottom: column[i-1].y,
+                                height: column[i-1].y - start.y,
+                                color: start.color
+                            });
+                            start = column[i];
+                        }
+                    }
+                    candles.push({
+                        x: x,
+                        top: start.y,
+                        bottom: column[column.length-1].y,
+                        height: column[column.length-1].y - start.y,
+                        color: start.color
+                    });
+                }
+            }
+            
+            return candles;
+        }
+
+        // ============ ПОИСК ПАТТЕРНОВ ============
+        function findPatterns(candles) {
+            const patterns = [];
+            
+            // Сортируем свечи по X (слева направо)
+            const sortedCandles = candles.sort((a, b) => a.x - b.x);
+            
+            // Группируем свечи по близким X координатам
+            const groups = [];
+            let currentGroup = [sortedCandles[0]];
+            
+            for (let i = 1; i < sortedCandles.length; i++) {
+                if (sortedCandles[i].x - sortedCandles[i-1].x < 5) {
+                    currentGroup.push(sortedCandles[i]);
+                } else {
+                    groups.push(currentGroup);
+                    currentGroup = [sortedCandles[i]];
+                }
+            }
+            groups.push(currentGroup);
+            
+            // Анализируем последние 3-5 групп свечей
+            const lastGroups = groups.slice(-5);
+            
+            if (lastGroups.length >= 2) {
+                const last = lastGroups[lastGroups.length - 1];
+                const prev = lastGroups[lastGroups.length - 2];
+                
+                const lastAvgHeight = last.reduce((s, c) => s + c.height, 0) / last.length;
+                const prevAvgHeight = prev.reduce((s, c) => s + c.height, 0) / prev.length;
+                const lastColor = last[0].color;
+                const prevColor = prev[0].color;
+                
+                // Доджи: очень маленькое тело
+                if (lastAvgHeight < prevAvgHeight * 0.3 && last.length > 0) {
+                    patterns.push({
+                        name: currentLang === 'en' ? 'Doji' : 'Доджи',
+                        type: 'reversal',
+                        confidence: 65
+                    });
+                }
+                
+                // Поглощение: тело последней свечи больше предыдущей
+                if (lastAvgHeight > prevAvgHeight * 1.5 && lastColor !== prevColor) {
+                    patterns.push({
+                        name: currentLang === 'en' ? 'Engulfing' : 'Поглощение',
+                        type: lastColor === 'green' ? 'bullish' : 'bearish',
+                        confidence: 75
+                    });
+                }
+                
+                // Молот: длинная нижняя тень + маленькое тело вверху
+                if (last.length >= 3 && lastAvgHeight > 0) {
+                    const bodyPositions = last.map(c => c.top);
+                    const avgBodyTop = bodyPositions.reduce((a, b) => a + b, 0) / bodyPositions.length;
+                    
+                    if (avgBodyTop > last[0].top * 1.2) {
+                        patterns.push({
+                            name: currentLang === 'en' ? 'Hammer' : 'Молот',
+                            type: 'bullish_reversal',
+                            confidence: 70
+                        });
+                    }
+                }
+            }
+            
+            return patterns;
+        }
+
+        // ============ РАСЧЕТ ТРЕНДА ============
+        function calculateTrend(candles) {
+            if (candles.length < 10) return { direction: 'sideways', strength: 0 };
+            
+            const sorted = candles.sort((a, b) => a.x - b.x);
+            const midPoint = Math.floor(sorted.length / 2);
+            const firstHalf = sorted.slice(0, midPoint);
+            const secondHalf = sorted.slice(midPoint);
+            
+            const firstAvgY = firstHalf.reduce((s, c) => s + c.top, 0) / firstHalf.length;
+            const secondAvgY = secondHalf.reduce((s, c) => s + c.top, 0) / secondHalf.length;
+            
+            const diff = firstAvgY - secondAvgY; // Положительное = восходящий
+            
+            if (Math.abs(diff) < 5) return { direction: 'sideways', strength: 0 };
+            if (diff > 20) return { direction: 'bullish', strength: Math.min(Math.abs(diff) / 2, 100) };
+            if (diff < -20) return { direction: 'bearish', strength: Math.min(Math.abs(diff) / 2, 100) };
+            
+            return { direction: diff > 0 ? 'bullish' : 'bearish', strength: Math.abs(diff) };
+        }
+
+        // ============ ЖИВЫЕ ДАННЫЕ С БИРЖИ ============
+        async function fetchLiveData(symbol) {
+            try {
+                const response = await fetch(
+                    `https://api.binance.com/api/v3/klines?symbol=${symbol.toUpperCase()}&interval=15m&limit=50`
+                );
+                const data = await response.json();
+                
+                return data.map(candle => ({
+                    open: parseFloat(candle[1]),
+                    high: parseFloat(candle[2]),
+                    low: parseFloat(candle[3]),
+                    close: parseFloat(candle[4]),
+                    volume: parseFloat(candle[5])
+                }));
+            } catch (error) {
+                console.error('Failed to fetch live data:', error);
+                return null;
+            }
+        }
+
+        function calculateRSI(candles, period = 14) {
+            if (candles.length < period + 1) return 50;
+            
+            let gains = 0, losses = 0;
+            const changes = [];
+            
+            for (let i = candles.length - period; i < candles.length; i++) {
+                changes.push(candles[i].close - candles[i-1].close);
+            }
+            
+            changes.forEach(change => {
+                if (change > 0) gains += change;
+                else losses -= change;
+            });
+            
+            const avgGain = gains / period;
+            const avgLoss = losses / period;
+            
+            if (avgLoss === 0) return 100;
+            const rs = avgGain / avgLoss;
+            return 100 - (100 / (1 + rs));
+        }
+
+        // ============ ОСНОВНАЯ ФУНКЦИЯ АНАЛИЗА ============
+        window.performRealAnalysis = async function() {
+            const btn = document.getElementById('actionBtn');
             const t = trans[currentLang];
             
-            btn.disabled = true; line.style.display = 'block'; log.style.display = 'block'; log.innerHTML = "";
+            btn.disabled = true;
             
-            if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
-
-            // Анимация логов
-            for (let i = 1; i <= 5; i++) {
-                log.innerHTML += t['log' + i] + "<br>";
-                line.style.top = (i * 20) + "%";
-                if (tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
-                await new Promise(r => setTimeout(r, 600));
+            if (tg.HapticFeedback) {
+                tg.HapticFeedback.impactOccurred('medium');
             }
 
-            // --- ЛОГИКА СКАНЕРА ПИКСЕЛЕЙ ---
-            const w = canvas.width, h = canvas.height;
-            const scanTop = Math.floor(h * 0.2); // Игнорируем шапку
-            const scanHeight = Math.floor(h * 0.6); // Только центр графика
-            
-            // 1. Глобальный тренд (левая часть экрана)
-            const histData = ctx.getImageData(Math.floor(w * 0.05), scanTop, Math.floor(w * 0.65), scanHeight).data;
-            let gUp = 0, gDown = 0;
-            for(let i=0; i<histData.length; i+=128) {
-                const r=histData[i], g=histData[i+1], b=histData[i+2];
-                if(theme==='green_red') { 
-                    if(g > r+20 && g > b+10) gUp++; 
-                    else if(r > g+20 && r > b+10) gDown++; 
-                } else { 
-                    if(b > r+20 && b > g+10) gUp++; 
-                    else if(r > g+20 && r > b+10) gDown++; 
-                }
-            }
+            let finalResult;
 
-            // 2. Микро-тренд (крайняя правая часть перед текущей ценой)
-            const mX = Math.floor(w * 0.75);
-            const mW = Math.floor(w * 0.13); 
-            const microData = ctx.getImageData(mX, scanTop, mW, scanHeight).data;
-            let mUp = 0, mDown = 0, minY = h, maxY = 0;
-
-            for (let i = 0; i < microData.length; i += 32) {
-                const r = microData[i], g = microData[i+1], b = microData[i+2];
-                const y = Math.floor((i / 4) / mW);
-                let isUpCandle = (theme==='green_red') ? (g > r+20) : (b > r+20);
-                let isDownCandle = (r > g+20);
-
-                if(isUpCandle) mUp++;
-                if(isDownCandle) mDown++;
-                if(isUpCandle || isDownCandle) {
-                    if(y < minY) minY = y;
-                    if(y > maxY) maxY = y;
-                }
-            }
-
-            const globalTrendUp = gUp > gDown;
-            let isUp = mUp > mDown;
-            let logic = t.following;
-            let score = 72;
-
-            // Логика разворота (Reversal)
-            if (mDown > mUp * 1.5 && globalTrendUp) { isUp = false; logic = t.reversal; score = 84; }
-            else if (mUp > mDown * 1.5 && !globalTrendUp) { isUp = true; logic = t.reversal; score = 84; }
-
-            // Вывод результата
-            document.getElementById('screen-upload').classList.remove('active');
-            document.getElementById('screen-result').classList.add('active');
-            document.getElementById('step-upload').classList.remove('active');
-            document.getElementById('step-result').classList.add('active');
-            
-            const resS = document.getElementById('resSignal');
-            resS.innerText = isUp ? t.up : t.down;
-            resS.style.color = isUp ? "var(--accent)" : "var(--danger)";
-            document.getElementById('resBorder').style.borderColor = resS.style.color;
-            
-            document.getElementById('trend-status').innerText = logic;
-            document.getElementById('impulse-power').innerText = (maxY - minY > scanHeight * 0.3) ? t.high_p : t.stable;
-            document.getElementById('rec-time').innerText = logic === t.reversal ? "2-3 MIN" : "3-5 MIN";
-            document.getElementById('resAccuracy').innerText = "Confidence: " + (score + Math.random()*10).toFixed(1) + "%";
-
-            if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
-        };
-    </script>
-</body>
-</html>
+            if (currentMode === 'live') {
+                // Режим живых данных
