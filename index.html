@@ -1027,4 +1027,25 @@
             } else {
                 resSignal.style.color = '#ff9d00';
                 document.getElementById('resBorder').style.borderColor = '#ff9d00';
-           
+            }
+            
+            // Уверенность
+            document.getElementById('confFill').style.width = result.confidence + '%';
+            document.getElementById('resConf').innerText = result.confidence.toFixed(1) + '%';
+            
+            // Детали
+            document.getElementById('pattern').innerText = result.pattern;
+            document.getElementById('trend').innerText = result.trend;
+            document.getElementById('strength').innerText = result.strength + '%';
+            document.getElementById('timeframe').innerText = result.timeframe;
+            
+            // Паттерны
+            if (result.patterns && result.patterns.length > 0) {
+                document.getElementById('patternsBox').style.display = 'block';
+                document.getElementById('patternTags').innerHTML = 
+                    result.patterns.map(p => `<span class="pattern-tag">${p}</span>`).join('');
+            }
+        }
+    </script>
+</body>
+</html>
