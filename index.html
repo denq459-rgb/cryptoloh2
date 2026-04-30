@@ -66,16 +66,25 @@
         .upload-area {
             border: 2px dashed var(--border);
             border-radius: 24px;
-            padding: 50px 15px;
+            padding: 20px 15px;  /* уменьшен верхний отступ, чтобы канвас влезал */
             text-align: center;
             background: rgba(255,255,255,0.02);
             position: relative;
             cursor: pointer;
+            overflow: hidden;     /* чтобы канвас не вылезал */
         }
 
-        #main-canvas { width: 100%; border-radius: 12px; display: none; margin-top: 10px; border: 1px solid var(--border); }
+        #main-canvas { 
+            display: none; 
+            max-width: 100%;      /* не растягиваться шире контейнера */
+            height: auto; 
+            margin: 10px auto 0;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+        }
+
         .scan-line { position: absolute; left: 0; width: 100%; height: 2px; background: var(--accent); box-shadow: 0 0 15px var(--accent); display: none; z-index: 10; pointer-events: none; }
-        .analysis-log { position: absolute; top: 10px; left: 10px; font-family: monospace; font-size: 10px; color: var(--accent); background: rgba(0,0,0,0.7); padding: 8px; border-radius: 6px; display: none; z-index: 11; }
+        .analysis-log { position: absolute; top: 10px; left: 10px; font-family: monospace; font-size: 10px; color: var(--accent); background: rgba(0,0,0,0.7); padding: 8px; border-radius: 6px; display: none; z-index: 11; max-width: 80%; }
 
         .result-card { 
             background: var(--card-bg); border-radius: 28px; padding: 30px 20px; text-align: center; border: 2px solid var(--border); margin-bottom: 20px;
@@ -175,6 +184,18 @@
         const canvas = document.getElementById('main-canvas');
         const ctx = canvas.getContext('2d', { willReadFrequently: true });
 
+        // --- Адаптивная ширина канваса под контейнер ---
+        function getContainerWidth() {
+            const uploadArea = document.querySelector('.upload-area');
+            // ширина минус внутренние отступы и border (примерно)
+            const style = window.getComputedStyle(uploadArea);
+            const paddingLeft = parseFloat(style.paddingLeft);
+            const paddingRight = parseFloat(style.paddingRight);
+            const borderLeft = parseFloat(style.borderLeftWidth);
+            const borderRight = parseFloat(style.borderRightWidth);
+            return uploadArea.clientWidth - paddingLeft - paddingRight - borderLeft - borderRight - 20; // еще небольшой запас
+        }
+
         function handleImage(input) {
             const file = input.files[0];
             if(!file) return;
@@ -182,9 +203,12 @@
             reader.onload = function(e) {
                 const img = new Image();
                 img.onload = function() {
+                    const maxWidth = getContainerWidth();
                     const aspect = img.height / img.width;
-                    canvas.width = 1000; 
-                    canvas.height = 1000 * aspect;
+                    // Устанавливаем внутренний размер канваса равным доступной ширине
+                    canvas.width = maxWidth;
+                    canvas.height = maxWidth * aspect;
+                    ctx.clearRect(0, 0, canvas.width, canvas.height); // на всякий случай
                     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
                     canvas.style.display = 'block';
                     document.getElementById('placeholder').style.display = 'none';
@@ -195,6 +219,7 @@
             reader.readAsDataURL(file);
         }
 
+        // --- Оптимизированный анализ с однократным чтением пикселей ---
         async function performDeepAnalysis() {
             const btn = document.getElementById('visionBtn');
             const line = document.getElementById('scanLine');
@@ -224,24 +249,36 @@
 
             const w = canvas.width;
             const h = canvas.height;
-            const imgData = ctx.getImageData(0, 0, w, h).data;
+            // Единственный вызов getImageData на всё изображение
+            const fullImageData = ctx.getImageData(0, 0, w, h);
+            const imgData = fullImageData.data;
 
             // --- 1. СБОР СВЕЧЕЙ (RECONSTRUCTION) ---
             const candles = [];
             for (let x = 0; x < w; x += 10) {
                 let top = h, bottom = 0, g = 0, r = 0;
                 for (let y = 0; y < h; y++) {
-                    const i = (y * w + x) * 4;
-                    const rP = imgData[i], gP = imgData[i+1], bP = imgData[i+2];
-                    let isC = false;
-                    if(theme==='green_red') { if(gP > rP+30) {g++; isC=true;} else if(rP > gP+30) {r++; isC=true;} }
-                    else { if(bP > rP+30) {g++; isC=true;} else if(rP > bP+30) {r++; isC=true;} }
-                    if(isC) { top = Math.min(top, y); bottom = Math.max(bottom, y); }
+                    const idx = (y * w + x) * 4;
+                    const rP = imgData[idx], gP = imgData[idx+1], bP = imgData[idx+2];
+                    let isCandlePixel = false;
+                    if (theme === 'green_red') {
+                        if (gP > rP + 30) { g++; isCandlePixel = true; }
+                        else if (rP > gP + 30) { r++; isCandlePixel = true; }
+                    } else {
+                        if (bP > rP + 30) { g++; isCandlePixel = true; }
+                        else if (rP > bP + 30) { r++; isCandlePixel = true; }
+                    }
+                    if (isCandlePixel) {
+                        top = Math.min(top, y);
+                        bottom = Math.max(bottom, y);
+                    }
                 }
-                if (g+r > 5) candles.push({ x, top, bottom, isUp: g > r, size: bottom - top });
+                if (g + r > 5) {
+                    candles.push({ x, top, bottom, isUp: g > r, size: bottom - top });
+                }
             }
 
-            // --- 2. УРОВНИ (LEVELS) ---
+            // --- 2. УРОВНИ (исправлено приведение типов) ---
             const levelClusters = {};
             candles.forEach(c => {
                 const tL = Math.round(c.top / 20) * 20;
@@ -249,38 +286,81 @@
                 levelClusters[tL] = (levelClusters[tL] || 0) + 1;
                 levelClusters[bL] = (levelClusters[bL] || 0) + 1;
             });
-            const strongLevels = Object.keys(levelClusters).filter(k => levelClusters[k] > 3);
+            const strongLevels = Object.keys(levelClusters)
+                .filter(k => levelClusters[k] > 3)
+                .map(Number); // обязательно число
             const lastCandle = candles[candles.length - 1];
             const nearLevel = strongLevels.find(l => Math.abs(l - lastCandle.top) < 30 || Math.abs(l - lastCandle.bottom) < 30);
 
-            // --- 3. ФИГУРЫ (PATTERNS) ---
+            // --- 3. ФИГУРЫ (исправлен поиск Double Top/Bottom) ---
             let detectedPattern = "Classic Price Action";
-            const last4 = candles.slice(-20); // Группа последних свечей
-            const highs = last4.map(c => c.top);
-            const lows = last4.map(c => c.bottom);
-            if (Math.abs(Math.min(...highs) - Math.min(...highs.slice(0,5))) < 10) detectedPattern = "Double Top (Reversal)";
-            if (Math.abs(Math.max(...lows) - Math.max(...lows.slice(0,5))) < 10) detectedPattern = "Double Bottom (Reversal)";
+            const lastN = candles.slice(-20);
+            if (lastN.length >= 10) {
+                const tops = lastN.map(c => c.top);
+                const bottoms = lastN.map(c => c.bottom);
+                
+                // Поиск Double Top: два пика примерно на одном уровне с провалом между ними
+                const maxTop = Math.max(...tops);
+                const minTop = Math.min(...tops);
+                // Ищем два локальных максимума, близких к глобальному максимуму
+                let peaks = [];
+                for (let i = 1; i < tops.length - 1; i++) {
+                    if (tops[i] > tops[i-1] && tops[i] > tops[i+1]) peaks.push(i);
+                }
+                // Оставляем те, что находятся в пределах 2% от maxTop
+                peaks = peaks.filter(i => tops[i] >= maxTop * 0.98);
+                if (peaks.length >= 2) {
+                    // Проверяем, что между ними есть более низкая точка (провал)
+                    const first = peaks[0], second = peaks[peaks.length-1];
+                    const between = tops.slice(first, second+1);
+                    if (Math.min(...between) < maxTop * 0.95) {
+                        detectedPattern = "Double Top (Reversal)";
+                    }
+                }
+                
+                // Аналогично для Double Bottom
+                const maxBottom = Math.max(...bottoms);
+                const minBottom = Math.min(...bottoms);
+                let troughs = [];
+                for (let i = 1; i < bottoms.length - 1; i++) {
+                    if (bottoms[i] < bottoms[i-1] && bottoms[i] < bottoms[i+1]) troughs.push(i);
+                }
+                troughs = troughs.filter(i => bottoms[i] <= minBottom * 1.02);
+                if (troughs.length >= 2) {
+                    const first = troughs[0], second = troughs[troughs.length-1];
+                    const between = bottoms.slice(first, second+1);
+                    if (Math.max(...between) > minBottom * 1.05) {
+                        detectedPattern = "Double Bottom (Reversal)";
+                    }
+                }
+            }
 
-            // --- 4. ОБЪЕМЫ (VOLUME) ---
+            // --- 4. ОБЪЕМЫ (используем тот же imgData, анализируем только нижнюю часть) ---
             let volumeStatus = "Normal";
-            const bottomArea = ctx.getImageData(0, h * 0.8, w, h * 0.2).data;
+            const startY = Math.floor(h * 0.8);
             let coloredPixels = 0;
-            for(let i=0; i<bottomArea.length; i+=4) if(bottomArea[i+3] > 0 && (bottomArea[i] > 50 || bottomArea[i+1] > 50)) coloredPixels++;
-            if (coloredPixels > (w*h*0.2)*0.1) volumeStatus = "High (Climax)";
+            const totalPixelsInBand = w * (h - startY);
+            for (let y = startY; y < h; y++) {
+                for (let x = 0; x < w; x++) {
+                    const idx = (y * w + x) * 4;
+                    if (imgData[idx+3] > 0 && (imgData[idx] > 50 || imgData[idx+1] > 50 || imgData[idx+2] > 50)) {
+                        coloredPixels++;
+                    }
+                }
+            }
+            if (coloredPixels > totalPixelsInBand * 0.1) volumeStatus = "High (Climax)";
 
             // --- 5. ВОЛАТИЛЬНОСТЬ (PHASE) ---
             const avgSize = candles.reduce((a,b) => a + b.size, 0) / candles.length;
-            const recentSize = last4.reduce((a,b) => a + b.size, 0) / last4.length;
+            const recentSize = lastN.reduce((a,b) => a + b.size, 0) / lastN.length;
             const marketPhase = recentSize > avgSize * 1.5 ? "Impulsive (High Vol)" : "Sideways (Accumulation)";
 
             // --- ИТОГОВЫЙ СИГНАЛ ---
             let isUp = lastCandle.isUp;
             let confidence = 70 + (nearLevel ? 15 : 0) + (volumeStatus === "High (Climax)" ? 10 : 0);
-            
-            // Если мы у уровня сопротивления (верхний уровень) и тренд затихает - сигнал вниз
             if (nearLevel && !lastCandle.isUp && marketPhase.includes("Impulsive")) isUp = false;
 
-            // Отображение
+            // Переключение на экран результата
             document.getElementById('screen-upload').classList.remove('active');
             document.getElementById('screen-result').classList.add('active');
             
@@ -292,7 +372,7 @@
             document.getElementById('resPattern').innerText = detectedPattern;
             document.getElementById('resPhase').innerText = marketPhase;
             document.getElementById('resVolume').innerText = volumeStatus;
-            document.getElementById('resLevel').innerText = nearLevel ? "Zone Active" : "No Major Zones";
+            document.getElementById('resLevel').innerText = nearLevel !== undefined ? "Zone Active" : "No Major Zones";
 
             if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
         }
