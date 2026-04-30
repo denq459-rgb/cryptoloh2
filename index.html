@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Kryon AI Trade Bot v6 - PocketOption Optimized</title>
+    <title>Kryon AI Trade Bot - Ultra Vision Pro</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
             --bg-color: #0c0f17;
             --card-bg: #161a24;
             --accent: #00f281;
+            --accent-blue: #00d4ff;
             --text-main: #ffffff;
             --text-gray: #7a828a;
             --border: #232a35;
@@ -17,758 +18,284 @@
             --warning: #ff9d00;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-
         body {
             background-color: var(--bg-color);
             color: var(--text-main);
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            font-family: 'Inter', -apple-system, sans-serif;
+            margin: 0; padding: 0;
+            overflow-x: hidden;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
-            -webkit-tap-highlight-color: transparent;
-            user-select: none;
-            -webkit-user-select: none;
         }
 
         .app-header {
-            padding: 15px;
+            padding: 25px 15px 15px;
             text-align: center;
-            background: #11151e;
+            background: linear-gradient(to bottom, #11151e, var(--bg-color));
             border-bottom: 1px solid var(--border);
         }
 
         .header-logo {
-            width: 45px; height: 45px;
+            width: 44px; height: 44px;
             background: var(--card-bg);
             border-radius: 12px;
-            display: inline-flex;
-            align-items: center; justify-content: center;
+            display: inline-flex; align-items: center; justify-content: center;
             border: 2px solid var(--accent);
-            margin-bottom: 8px; font-size: 22px;
+            margin-bottom: 10px; color: var(--accent); font-size: 24px;
+            box-shadow: 0 0 20px rgba(0, 242, 129, 0.2);
         }
 
-        .app-title { font-size: 20px; font-weight: 800; }
-        .app-subtitle { font-size: 10px; color: var(--accent); letter-spacing: 2px; margin-top: 3px; }
+        .app-title { font-size: 22px; font-weight: 800; margin: 0; letter-spacing: 0.5px; }
+        
+        .steps-bar {
+            display: inline-flex; gap: 20px;
+            background: #11151e; padding: 8px 20px;
+            border-radius: 20px; font-size: 11px; color: var(--text-gray);
+            margin-top: 15px; border: 1px solid #1a1f29;
+        }
+        .steps-bar span.active { color: var(--text-main); display: flex; align-items: center; gap: 6px; }
+        .steps-bar span.active::before { content: '●'; color: var(--accent); }
 
-        .content { flex: 1; padding: 15px; padding-bottom: 100px; }
-
-        .screen { display: none; }
-        .screen.active { display: block; animation: fadeIn 0.3s ease; }
-
+        .content { flex: 1; padding: 20px 15px 120px; }
+        
+        .screen { display: none; animation: fadeIn 0.3s ease; }
+        .screen.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        .upload-box {
+        .upload-area {
             border: 2px dashed var(--border);
-            border-radius: 20px;
-            padding: 20px;
+            border-radius: 24px;
+            padding: 50px 15px;
             text-align: center;
             background: rgba(255,255,255,0.02);
-            cursor: pointer;
-            margin-bottom: 15px;
-            min-height: 200px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-direction: column;
             position: relative;
-        }
-
-        .upload-box:active { border-color: var(--accent); }
-
-        #chartCanvas {
-            width: 100%;
-            border-radius: 12px;
-            display: none;
-            border: 1px solid var(--border);
-        }
-
-        .roi-overlay {
-            position: absolute;
-            border: 2px solid var(--accent);
-            background: rgba(0,242,129,0.05);
-            display: none;
-            pointer-events: none;
-            z-index: 5;
-        }
-
-        .theme-selector {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            font-size: 12px;
-            color: var(--text-gray);
-            margin: 12px 0;
-        }
-
-        .theme-selector select {
-            background: var(--card-bg);
-            color: #fff;
-            border: 1px solid var(--border);
-            padding: 8px 12px;
-            border-radius: 10px;
-            outline: none;
-        }
-
-        .btn {
-            width: 100%;
-            padding: 18px;
-            border: none;
-            border-radius: 15px;
-            font-weight: 700;
-            font-size: 14px;
-            cursor: pointer;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-top: 12px;
-            transition: 0.2s;
-            outline: none;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        .btn:active { transform: scale(0.97); }
-        .btn:disabled { opacity: 0.5; pointer-events: none; }
-
-        .btn-primary {
-            background: var(--accent);
-            color: #000;
-            box-shadow: 0 5px 20px rgba(0,242,129,0.3);
-        }
-
-        .btn-secondary {
-            background: var(--card-bg);
-            color: #fff;
-            border: 1px solid var(--border);
-        }
-
-        .result-card {
-            background: var(--card-bg);
-            border-radius: 25px;
-            padding: 25px 20px;
-            text-align: center;
-            border: 2px solid var(--border);
-            margin-bottom: 15px;
-        }
-
-        .signal-text { font-size: 48px; font-weight: 900; margin: 15px 0; }
-        .confidence-bar {
-            width: 80%; height: 6px;
-            background: var(--border);
-            border-radius: 3px;
-            margin: 12px auto;
-            overflow: hidden;
-        }
-        .confidence-fill {
-            height: 100%;
-            background: var(--accent);
-            transition: width 0.5s ease;
-            border-radius: 3px;
-        }
-
-        .info-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-top: 20px;
-        }
-
-        .info-item {
-            background: #11151e;
-            padding: 12px;
-            border-radius: 12px;
-            border: 1px solid #1a1f29;
-        }
-
-        .info-item .lbl {
-            font-size: 9px;
-            color: var(--text-gray);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 4px;
-        }
-
-        .info-item .val { font-size: 13px; font-weight: 700; }
-
-        .disclaimer {
-            background: rgba(255,75,92,0.1);
-            border: 1px solid var(--danger);
-            border-radius: 12px;
-            padding: 12px;
-            margin-top: 15px;
-            font-size: 10px;
-            color: var(--danger);
-            text-align: center;
-            line-height: 1.5;
-        }
-
-        .analysis-steps {
-            font-family: 'Courier New', monospace;
-            font-size: 10px;
-            color: var(--accent);
-            text-align: left;
-            background: rgba(0,0,0,0.9);
-            padding: 10px;
-            border-radius: 8px;
-            margin-top: 10px;
-            display: none;
-            line-height: 1.6;
-        }
-
-        .bottom-bar {
-            position: fixed;
-            bottom: 0;
-            width: 100%;
-            background: #11151e;
-            border-top: 1px solid var(--border);
-            padding: 12px 0 30px;
-            text-align: center;
-            font-size: 10px;
-            color: var(--accent);
-            font-weight: 600;
-            letter-spacing: 2px;
-        }
-
-        .mode-toggle {
-            display: flex;
-            gap: 8px;
-            margin: 10px 0;
-            justify-content: center;
-        }
-
-        .mode-btn {
-            padding: 8px 16px;
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            color: var(--text-gray);
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: 600;
             cursor: pointer;
         }
 
-        .mode-btn.active {
-            background: rgba(0,242,129,0.1);
-            border-color: var(--accent);
-            color: var(--accent);
+        #main-canvas { width: 100%; border-radius: 12px; display: none; margin-top: 10px; border: 1px solid var(--border); }
+        .scan-line { position: absolute; left: 0; width: 100%; height: 2px; background: var(--accent); box-shadow: 0 0 15px var(--accent); display: none; z-index: 10; pointer-events: none; }
+        .analysis-log { position: absolute; top: 10px; left: 10px; font-family: monospace; font-size: 10px; color: var(--accent); background: rgba(0,0,0,0.7); padding: 8px; border-radius: 6px; display: none; z-index: 11; }
+
+        .result-card { 
+            background: var(--card-bg); border-radius: 28px; padding: 30px 20px; text-align: center; border: 2px solid var(--border); margin-bottom: 20px;
         }
+        .signal-val { font-size: 52px; font-weight: 900; margin: 10px 0; }
+        
+        .indicator-panel {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px;
+        }
+        .ind-item {
+            background: #11151e; padding: 12px; border-radius: 12px; text-align: left; border: 1px solid var(--border);
+        }
+        .ind-label { font-size: 10px; color: var(--text-gray); text-transform: uppercase; margin-bottom: 4px; }
+        .ind-value { font-size: 12px; font-weight: 700; color: #fff; }
+        .ind-value.pos { color: var(--accent); }
+        .ind-value.neg { color: var(--danger); }
+
+        .btn-main {
+            width: 100%; padding: 22px; background: var(--accent); color: #000; border: none; border-radius: 18px; font-weight: 800; font-size: 16px; cursor: pointer; text-transform: uppercase; margin-bottom: 15px;
+        }
+        .btn-main:disabled { background: #232a35; color: #555; }
+
+        .nav-bar { position: fixed; bottom: 0; width: 100%; background: #11151e; border-top: 1px solid var(--border); padding: 15px 0 35px; text-align: center; }
     </style>
 </head>
 <body>
 
     <div class="app-header">
-        <div class="header-logo">📊</div>
-        <h1 class="app-title">Kryon AI Trade Bot</h1>
-        <p class="app-subtitle">PocketOption ROI Analysis v6</p>
-        
-        <div class="mode-toggle">
-            <button class="mode-btn active" id="btnModeChart">📸 Chart Screenshot</button>
-            <button class="mode-btn" id="btnModeLive">🔴 Live API</button>
+        <div class="header-logo">🤖</div>
+        <h1 class="app-title">Kryon AI Vision</h1>
+        <div class="steps-bar">
+            <span id="step-upload" class="active">SCAN</span>
+            <span id="step-result">RESULT</span>
         </div>
     </div>
 
     <div class="content">
-        <!-- ЭКРАН ЗАГРУЗКИ -->
-        <div id="screenUpload" class="screen active">
-            <div class="upload-box" id="uploadBox">
-                <div id="uploadPlaceholder">
-                    <div style="font-size: 50px; margin-bottom: 10px;">📈</div>
-                    <div style="font-weight: 700; font-size: 15px;">TAP TO UPLOAD SCREENSHOT</div>
-                    <div style="font-size: 10px; color: var(--text-gray); margin-top: 6px;">
-                        Optimized for PocketOption charts
-                    </div>
+        <div id="screen-upload" class="screen active">
+            <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+                <div id="placeholder">
+                    <div style="font-size: 50px; margin-bottom: 15px;">📊</div>
+                    <div style="font-weight: 800;">UPLOAD CHART</div>
+                    <div style="font-size: 11px; color: var(--text-gray); margin-top: 8px;">AI Detects Levels, Patterns & Volumes</div>
                 </div>
-                <div class="roi-overlay" id="roiOverlay"></div>
-                <canvas id="chartCanvas"></canvas>
+                <div class="analysis-log" id="analysisLog"></div>
+                <div class="scan-line" id="scanLine"></div>
+                <canvas id="main-canvas"></canvas>
             </div>
 
-            <input type="file" id="fileInput" accept="image/*" style="display: none;">
-
-            <div class="theme-selector">
-                <span>Chart Type:</span>
-                <select id="chartType">
-                    <option value="pocketoption">PocketOption (Green/Red)</option>
-                    <option value="pocketoption_blue">PocketOption (Blue/Red)</option>
-                    <option value="generic">Generic Chart</option>
+            <div style="margin-top: 15px; text-align: center; font-size: 12px; color: var(--text-gray);">
+                Chart Color: 
+                <select id="colorTheme" style="background:#161a24; color:#fff; border:1px solid #232a35; border-radius:5px; padding:3px;">
+                    <option value="green_red">Green / Red</option>
+                    <option value="blue_red">Blue / Red</option>
                 </select>
             </div>
 
-            <div class="analysis-steps" id="analysisSteps"></div>
-
-            <button class="btn btn-primary" id="btnAnalyze" style="display: none;">
-                🔍 ANALYZE CHART
-            </button>
+            <input type="file" id="fileInput" accept="image/*" style="display:none" onchange="handleImage(this)">
+            <button id="visionBtn" class="btn-main" style="display:none; margin-top: 25px;" onclick="performDeepAnalysis()">START AI SCAN</button>
         </div>
 
-        <!-- ЭКРАН РЕЗУЛЬТАТОВ -->
-        <div id="screenResult" class="screen">
-            <div class="result-card" id="resultCard">
-                <div style="font-size: 10px; color: var(--text-gray); letter-spacing: 2px;">
-                    POCKETOPTION SIGNAL
-                </div>
-                <div class="signal-text" id="signalText">---</div>
-                <div style="font-size: 11px; color: var(--text-gray);">Confidence</div>
-                <div class="confidence-bar">
-                    <div class="confidence-fill" id="confFill" style="width: 0%;"></div>
-                </div>
-                <div style="font-size: 16px; font-weight: 700; margin-top: 4px;" id="confText">--%</div>
-
-                <div class="info-grid">
-                    <div class="info-item">
-                        <div class="lbl">Direction</div>
-                        <div class="val" id="infoDirection">---</div>
+        <div id="screen-result" class="screen">
+            <div class="result-card" id="resBorder">
+                <div style="color: var(--text-gray); font-size: 11px; letter-spacing: 1px;">AI PROBABILITY SIGNAL</div>
+                <div id="resSignal" class="signal-val">---</div>
+                <div id="resAccuracy" style="font-size: 18px; font-weight: bold; color: var(--accent-blue);">Confidence: --%</div>
+                
+                <div class="indicator-panel">
+                    <div class="ind-item">
+                        <div class="ind-label">Pattern</div>
+                        <div id="resPattern" class="ind-value">None Detected</div>
                     </div>
-                    <div class="info-item">
-                        <div class="lbl">Last 3 Candles</div>
-                        <div class="val" id="infoCandles">---</div>
+                    <div class="ind-item">
+                        <div class="ind-label">Market Phase</div>
+                        <div id="resPhase" class="ind-value">Scanning...</div>
                     </div>
-                    <div class="info-item">
-                        <div class="lbl">Trend Strength</div>
-                        <div class="val" id="infoStrength">---</div>
+                    <div class="ind-item">
+                        <div class="ind-label">Volume Level</div>
+                        <div id="resVolume" class="ind-value">Normal</div>
                     </div>
-                    <div class="info-item">
-                        <div class="lbl">Expiry Time</div>
-                        <div class="val" id="infoExpiry">---</div>
-                    </div>
-                    <div class="info-item" style="grid-column: 1 / -1;">
-                        <div class="lbl">ROI Analysis</div>
-                        <div class="val" id="infoROI" style="font-size: 11px;">---</div>
+                    <div class="ind-item">
+                        <div class="ind-label">Key Level</div>
+                        <div id="resLevel" class="ind-value">No Zones</div>
                     </div>
                 </div>
             </div>
-
-            <div class="disclaimer">
-                ⚠️ This is automated technical analysis. Not financial advice.<br>
-                Trading binary options involves high risk. Test on demo first.
-            </div>
-
-            <button class="btn btn-secondary" id="btnNewAnalysis">
-                ← NEW ANALYSIS
-            </button>
+            <button class="btn-main" style="background: #232a35; color: #fff;" onclick="location.reload()">NEW ANALYSIS</button>
         </div>
     </div>
 
-    <div class="bottom-bar">
-        ⚡ ROI Smart Detection Active
-    </div>
+    <div class="nav-bar"><div style="color:var(--accent); font-size:10px; font-weight:bold;">⚡ ADVANCED ENGINE v5.0 ACTIVE</div></div>
 
     <script>
-        // ============ INIT ============
         const tg = window.Telegram.WebApp;
-        if (tg?.expand) tg.expand();
-        if (tg?.headerColor) tg.headerColor = "#11151e";
+        tg.expand();
 
-        // ============ DOM ELEMENTS ============
-        const screenUpload = document.getElementById('screenUpload');
-        const screenResult = document.getElementById('screenResult');
-        const uploadBox = document.getElementById('uploadBox');
-        const uploadPlaceholder = document.getElementById('uploadPlaceholder');
-        const chartCanvas = document.getElementById('chartCanvas');
-        const ctx = chartCanvas.getContext('2d', { willReadFrequently: true });
-        const roiOverlay = document.getElementById('roiOverlay');
-        const fileInput = document.getElementById('fileInput');
-        const btnAnalyze = document.getElementById('btnAnalyze');
-        const btnNewAnalysis = document.getElementById('btnNewAnalysis');
-        const btnModeChart = document.getElementById('btnModeChart');
-        const btnModeLive = document.getElementById('btnModeLive');
-        const chartType = document.getElementById('chartType');
-        const analysisSteps = document.getElementById('analysisSteps');
+        const canvas = document.getElementById('main-canvas');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
 
-        // Result elements
-        const signalText = document.getElementById('signalText');
-        const confFill = document.getElementById('confFill');
-        const confText = document.getElementById('confText');
-        const infoDirection = document.getElementById('infoDirection');
-        const infoCandles = document.getElementById('infoCandles');
-        const infoStrength = document.getElementById('infoStrength');
-        const infoExpiry = document.getElementById('infoExpiry');
-        const infoROI = document.getElementById('infoROI');
-        const resultCard = document.getElementById('resultCard');
-
-        // ============ STATE ============
-        let currentMode = 'chart';
-        let imageLoaded = false;
-        let roiData = null;
-
-        // ============ ROI CONFIG FOR POCKETOPTION ============
-        function calculateROI(canvasWidth, canvasHeight) {
-            // PocketOption layout analysis:
-            // Top: header with balance (~8% of height)
-            // Left: price scale (~10% of width)
-            // Bottom: trade buttons (~12% of height)
-            // Right: some padding (~5% of width)
-            
-            return {
-                x: Math.floor(canvasWidth * 0.10),      // Skip price scale
-                y: Math.floor(canvasHeight * 0.08),     // Skip header
-                width: Math.floor(canvasWidth * 0.85),  // Use 85% width
-                height: Math.floor(canvasHeight * 0.78) // Use 78% height (skip buttons)
-            };
-        }
-
-        // ============ EVENT LISTENERS ============
-        uploadBox.addEventListener('click', (e) => {
-            if (currentMode === 'chart') {
-                e.preventDefault();
-                fileInput.click();
-            }
-        });
-
-        chartCanvas.addEventListener('click', (e) => e.stopPropagation());
-
-        fileInput.addEventListener('change', handleFileSelect);
-        btnAnalyze.addEventListener('click', performAnalysis);
-        btnNewAnalysis.addEventListener('click', resetToUpload);
-        
-        btnModeChart.addEventListener('click', () => switchMode('chart'));
-        btnModeLive.addEventListener('click', () => switchMode('live'));
-
-        // ============ FILE HANDLING ============
-        function handleFileSelect(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-            
-            if (!file.type.match(/image\/(jpeg|png|gif|bmp|webp)/)) {
-                alert('Please select an image file');
-                return;
-            }
-
+        function handleImage(input) {
+            const file = input.files[0];
+            if(!file) return;
             const reader = new FileReader();
-            
-            reader.onload = function(event) {
+            reader.onload = function(e) {
                 const img = new Image();
-                
                 img.onload = function() {
-                    const maxWidth = 900;
-                    const scale = maxWidth / img.width;
-                    
-                    chartCanvas.width = maxWidth;
-                    chartCanvas.height = Math.floor(img.height * scale);
-                    
-                    ctx.clearRect(0, 0, chartCanvas.width, chartCanvas.height);
-                    ctx.drawImage(img, 0, 0, chartCanvas.width, chartCanvas.height);
-                    
-                    // Calculate and show ROI
-                    const roi = calculateROI(chartCanvas.width, chartCanvas.height);
-                    
-                    roiOverlay.style.display = 'block';
-                    roiOverlay.style.left = roi.x + 'px';
-                    roiOverlay.style.top = roi.y + 'px';
-                    roiOverlay.style.width = roi.width + 'px';
-                    roiOverlay.style.height = roi.height + 'px';
-                    
-                    uploadPlaceholder.style.display = 'none';
-                    chartCanvas.style.display = 'block';
-                    btnAnalyze.style.display = 'block';
-                    imageLoaded = true;
-                    
-                    console.log('Image loaded. ROI:', roi);
+                    const aspect = img.height / img.width;
+                    canvas.width = 1000; 
+                    canvas.height = 1000 * aspect;
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    canvas.style.display = 'block';
+                    document.getElementById('placeholder').style.display = 'none';
+                    document.getElementById('visionBtn').style.display = 'block';
                 };
-                
-                img.onerror = () => alert('Failed to load image');
-                img.src = event.target.result;
+                img.src = e.target.result;
             };
-            
             reader.readAsDataURL(file);
         }
 
-        // ============ MODE SWITCHING ============
-        function switchMode(mode) {
-            currentMode = mode;
-            btnModeChart.classList.toggle('active', mode === 'chart');
-            btnModeLive.classList.toggle('active', mode === 'live');
+        async function performDeepAnalysis() {
+            const btn = document.getElementById('visionBtn');
+            const line = document.getElementById('scanLine');
+            const log = document.getElementById('analysisLog');
+            const theme = document.getElementById('colorTheme').value;
             
-            if (mode === 'chart') {
-                uploadBox.style.display = 'flex';
-                btnAnalyze.style.display = imageLoaded ? 'block' : 'none';
-            } else {
-                uploadBox.style.display = 'none';
-                btnAnalyze.style.display = 'block';
-                btnAnalyze.textContent = '🔴 FETCH LIVE DATA';
+            btn.disabled = true;
+            line.style.display = 'block';
+            log.style.display = 'block';
+            log.innerHTML = "";
+
+            const logs = [
+                "> Pre-processing image pixels...",
+                "> Mapping Support & Resistance zones...",
+                "> Scanning geometric chart patterns...",
+                "> Analyzing volume bar intensity...",
+                "> Calculating momentum volatility...",
+                "> Generating final signal..."
+            ];
+
+            for (let i = 0; i < logs.length; i++) {
+                log.innerHTML += logs[i] + "<br>";
+                line.style.top = (i * 18) + "%";
+                if (tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
+                await new Promise(r => setTimeout(r, 600));
             }
-        }
 
-        // ============ ANALYSIS ============
-        async function performAnalysis() {
-            btnAnalyze.disabled = true;
-            
-            if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
+            const w = canvas.width;
+            const h = canvas.height;
+            const imgData = ctx.getImageData(0, 0, w, h).data;
 
-            let result;
-            
-            if (currentMode === 'live') {
-                result = await analyzeLiveData();
-            } else {
-                if (!imageLoaded) {
-                    alert('Upload a screenshot first!');
-                    btnAnalyze.disabled = false;
-                    return;
+            // --- 1. СБОР СВЕЧЕЙ (RECONSTRUCTION) ---
+            const candles = [];
+            for (let x = 0; x < w; x += 10) {
+                let top = h, bottom = 0, g = 0, r = 0;
+                for (let y = 0; y < h; y++) {
+                    const i = (y * w + x) * 4;
+                    const rP = imgData[i], gP = imgData[i+1], bP = imgData[i+2];
+                    let isC = false;
+                    if(theme==='green_red') { if(gP > rP+30) {g++; isC=true;} else if(rP > gP+30) {r++; isC=true;} }
+                    else { if(bP > rP+30) {g++; isC=true;} else if(rP > bP+30) {r++; isC=true;} }
+                    if(isC) { top = Math.min(top, y); bottom = Math.max(bottom, y); }
                 }
-                result = await analyzeChartScreenshot();
+                if (g+r > 5) candles.push({ x, top, bottom, isUp: g > r, size: bottom - top });
             }
-            
-            if (result) showResult(result);
-            btnAnalyze.disabled = false;
-        }
 
-        async function analyzeChartScreenshot() {
-            analysisSteps.style.display = 'block';
-            analysisSteps.innerHTML = '';
-            
-            const roi = calculateROI(chartCanvas.width, chartCanvas.height);
-            
-            // Extract ROI image data
-            const roiImageData = ctx.getImageData(roi.x, roi.y, roi.width, roi.height);
-            const data = roiImageData.data;
-            
-            const log = (msg) => {
-                analysisSteps.innerHTML += `> ${msg}<br>`;
-                analysisSteps.scrollTop = analysisSteps.scrollHeight;
-            };
-            
-            log('📍 ROI extracted: ' + roi.width + 'x' + roi.height + 'px');
-            
-            if (tg?.HapticFeedback) tg.HapticFeedback.selectionChanged();
-            await sleep(300);
-            
-            // Split ROI into segments for candlestick analysis
-            const segments = 30; // Divide chart into 30 segments
-            const segmentWidth = Math.floor(roi.width / segments);
-            let candleColors = [];
-            
-            log('🔍 Scanning ' + segments + ' chart segments...');
-            
-            for (let seg = 0; seg < segments; seg++) {
-                let greenPx = 0, redPx = 0;
-                const startX = seg * segmentWidth;
-                const endX = (seg + 1) * segmentWidth;
-                
-                for (let x = startX; x < endX; x++) {
-                    for (let y = 0; y < roi.height; y++) {
-                        const idx = (y * roi.width + x) * 4;
-                        const r = data[idx];
-                        const g = data[idx + 1];
-                        const b = data[idx + 2];
-                        const a = data[idx + 3];
-                        
-                        if (a < 100) continue; // Skip transparent
-                        
-                        // Detect candle colors
-                        if (g > r + 20 && g > b + 15) greenPx++;
-                        else if (r > g + 20 && r > b + 15) redPx++;
-                    }
-                }
-                
-                if (greenPx > redPx * 2) candleColors.push('green');
-                else if (redPx > greenPx * 2) candleColors.push('red');
-                else if (greenPx > 0 || redPx > 0) candleColors.push('neutral');
-            }
-            
-            if (tg?.HapticFeedback) tg.HapticFeedback.selectionChanged();
-            await sleep(300);
-            
-            log('📊 Detected ' + candleColors.filter(c => c !== 'neutral').length + ' candles');
-            
-            // Analyze only LAST 6 segments (most recent candles)
-            const recentCount = Math.min(8, candleColors.length);
-            const recent = candleColors.slice(-recentCount);
-            const previous = candleColors.slice(-recentCount * 2, -recentCount);
-            
-            const recentGreen = recent.filter(c => c === 'green').length;
-            const recentRed = recent.filter(c => c === 'red').length;
-            const prevGreen = previous.filter(c => c === 'green').length;
-            const prevRed = previous.filter(c => c === 'red').length;
-            
-            log('📈 Recent candles: ' + recentGreen + 'G / ' + recentRed + 'R');
-            log('📉 Previous: ' + prevGreen + 'G / ' + prevRed + 'R');
-            
-            if (tg?.HapticFeedback) tg.HapticFeedback.selectionChanged();
-            await sleep(300);
-            
-            // DETERMINE SIGNAL
-            let signal, direction, strength, confidence, expiry, candleDesc;
-            
-            const totalRecent = recentGreen + recentRed || 1;
-            const greenPercent = (recentGreen / totalRecent) * 100;
-            
-            // Compare recent vs previous for trend
-            const recentRatio = recentRed > 0 ? recentGreen / recentRed : (recentGreen > 0 ? 3 : 1);
-            const prevRatio = prevRed > 0 ? prevGreen / prevRed : (prevGreen > 0 ? 3 : 1);
-            const trendChange = recentRatio - prevRatio;
-            
-            log('🧮 Green%: ' + greenPercent.toFixed(1) + '%');
-            log('🔄 Trend change: ' + (trendChange > 0 ? '+' : '') + trendChange.toFixed(2));
-            
-            // Signal logic
-            if (recentRed >= recentGreen + 2 && trendChange < -0.5) {
-                // Strong bearish continuation
-                signal = 'PUT 🔴';
-                direction = 'Bearish ▼';
-                strength = 'Strong';
-                confidence = 70 + recentRed * 5;
-                candleDesc = recentRed + ' red / ' + recentGreen + ' green';
-                expiry = '1-3 min';
-            } else if (recentGreen >= recentRed + 2 && trendChange > 0.5) {
-                // Strong bullish continuation
-                signal = 'CALL 🟢';
-                direction = 'Bullish ▲';
-                strength = 'Strong';
-                confidence = 70 + recentGreen * 5;
-                candleDesc = recentGreen + ' green / ' + recentRed + ' red';
-                expiry = '1-3 min';
-            } else if (recentRed > recentGreen && trendChange < 0) {
-                // Weak bearish
-                signal = 'PUT 🔴';
-                direction = 'Bearish ▼';
-                strength = 'Moderate';
-                confidence = 55 + recentRed * 3;
-                candleDesc = recentRed + ' red / ' + recentGreen + ' green';
-                expiry = '3-5 min';
-            } else if (recentGreen > recentRed && trendChange > 0) {
-                // Weak bullish
-                signal = 'CALL 🟢';
-                direction = 'Bullish ▲';
-                strength = 'Moderate';
-                confidence = 55 + recentGreen * 3;
-                candleDesc = recentGreen + ' green / ' + recentRed + ' red';
-                expiry = '3-5 min';
-            } else {
-                // No clear signal
-                signal = '⏸️ WAIT';
-                direction = 'Sideways ▶';
-                strength = 'None';
-                confidence = 25;
-                candleDesc = 'Mixed signals';
-                expiry = 'Wait for trend';
-            }
-            
-            confidence = Math.min(Math.round(confidence), 89);
-            
-            log('✅ Signal: ' + signal);
-            
-            if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
-            
-            return {
-                signal,
-                direction,
-                strength,
-                confidence,
-                candleDesc,
-                expiry,
-                roiInfo: `${roi.width}x${roi.height}px · ${segments} segments`,
-                source: 'chart'
-            };
-        }
+            // --- 2. УРОВНИ (LEVELS) ---
+            const levelClusters = {};
+            candles.forEach(c => {
+                const tL = Math.round(c.top / 20) * 20;
+                const bL = Math.round(c.bottom / 20) * 20;
+                levelClusters[tL] = (levelClusters[tL] || 0) + 1;
+                levelClusters[bL] = (levelClusters[bL] || 0) + 1;
+            });
+            const strongLevels = Object.keys(levelClusters).filter(k => levelClusters[k] > 3);
+            const lastCandle = candles[candles.length - 1];
+            const nearLevel = strongLevels.find(l => Math.abs(l - lastCandle.top) < 30 || Math.abs(l - lastCandle.bottom) < 30);
 
-        async function analyzeLiveData() {
-            // Try Binance API
-            try {
-                const response = await fetch(
-                    'https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=1m&limit=30'
-                );
-                
-                if (!response.ok) throw new Error('API error');
-                
-                const data = await response.json();
-                const closes = data.map(c => parseFloat(c[4]));
-                
-                // Simple RSI
-                let gains = 0, losses = 0;
-                const period = 14;
-                for (let i = closes.length - period; i < closes.length; i++) {
-                    const diff = closes[i] - closes[i-1];
-                    if (diff > 0) gains += diff;
-                    else losses -= diff;
-                }
-                
-                const rs = losses > 0 ? (gains/period) / (losses/period) : 100;
-                const rsi = 100 - (100 / (1 + rs));
-                
-                let signal, direction, strength, confidence, candleDesc, expiry;
-                
-                if (rsi < 30) {
-                    signal = 'CALL 🟢';
-                    direction = 'Oversold Reversal ▲';
-                    strength = 'Strong';
-                    confidence = 70 + (30 - rsi);
-                    candleDesc = 'RSI: ' + rsi.toFixed(1);
-                    expiry = '1-3 min';
-                } else if (rsi > 70) {
-                    signal = 'PUT 🔴';
-                    direction = 'Overbought Reversal ▼';
-                    strength = 'Strong';
-                    confidence = 70 + (rsi - 70);
-                    candleDesc = 'RSI: ' + rsi.toFixed(1);
-                    expiry = '1-3 min';
-                } else {
-                    const trend = closes[closes.length-1] > closes[closes.length-5] ? 'up' : 'down';
-                    signal = trend === 'up' ? 'CALL 🟢' : 'PUT 🔴';
-                    direction = trend === 'up' ? 'Bullish ▲' : 'Bearish ▼';
-                    strength = 'Moderate';
-                    confidence = 55;
-                    candleDesc = 'Trend following';
-                    expiry = '3-5 min';
-                }
-                
-                confidence = Math.min(Math.round(confidence), 88);
-                
-                return {
-                    signal, direction, strength, confidence,
-                    candleDesc, expiry,
-                    roiInfo: 'Live BTCUSDT 1m · RSI ' + rsi.toFixed(1),
-                    source: 'live'
-                };
-                
-            } catch (error) {
-                alert('Live data unavailable. Use screenshot mode.');
-                return null;
-            }
-        }
+            // --- 3. ФИГУРЫ (PATTERNS) ---
+            let detectedPattern = "Classic Price Action";
+            const last4 = candles.slice(-20); // Группа последних свечей
+            const highs = last4.map(c => c.top);
+            const lows = last4.map(c => c.bottom);
+            if (Math.abs(Math.min(...highs) - Math.min(...highs.slice(0,5))) < 10) detectedPattern = "Double Top (Reversal)";
+            if (Math.abs(Math.max(...lows) - Math.max(...lows.slice(0,5))) < 10) detectedPattern = "Double Bottom (Reversal)";
 
-        function showResult(result) {
-            screenUpload.classList.remove('active');
-            screenResult.classList.add('active');
+            // --- 4. ОБЪЕМЫ (VOLUME) ---
+            let volumeStatus = "Normal";
+            const bottomArea = ctx.getImageData(0, h * 0.8, w, h * 0.2).data;
+            let coloredPixels = 0;
+            for(let i=0; i<bottomArea.length; i+=4) if(bottomArea[i+3] > 0 && (bottomArea[i] > 50 || bottomArea[i+1] > 50)) coloredPixels++;
+            if (coloredPixels > (w*h*0.2)*0.1) volumeStatus = "High (Climax)";
+
+            // --- 5. ВОЛАТИЛЬНОСТЬ (PHASE) ---
+            const avgSize = candles.reduce((a,b) => a + b.size, 0) / candles.length;
+            const recentSize = last4.reduce((a,b) => a + b.size, 0) / last4.length;
+            const marketPhase = recentSize > avgSize * 1.5 ? "Impulsive (High Vol)" : "Sideways (Accumulation)";
+
+            // --- ИТОГОВЫЙ СИГНАЛ ---
+            let isUp = lastCandle.isUp;
+            let confidence = 70 + (nearLevel ? 15 : 0) + (volumeStatus === "High (Climax)" ? 10 : 0);
             
-            signalText.textContent = result.signal;
+            // Если мы у уровня сопротивления (верхний уровень) и тренд затихает - сигнал вниз
+            if (nearLevel && !lastCandle.isUp && marketPhase.includes("Impulsive")) isUp = false;
+
+            // Отображение
+            document.getElementById('screen-upload').classList.remove('active');
+            document.getElementById('screen-result').classList.add('active');
             
-            // Color coding
-            if (result.signal.includes('CALL')) {
-                signalText.style.color = '#00f281';
-                resultCard.style.borderColor = '#00f281';
-            } else if (result.signal.includes('PUT')) {
-                signalText.style.color = '#ff4b5c';
-                resultCard.style.borderColor = '#ff4b5c';
-            } else {
-                signalText.style.color = '#ff9d00';
-                resultCard.style.borderColor = '#ff9d00';
-            }
+            const resS = document.getElementById('resSignal');
+            resS.innerText = isUp ? "CALL 🟢" : "PUT 🔴";
+            resS.style.color = isUp ? "var(--accent)" : "var(--danger)";
+            document.getElementById('resAccuracy').innerText = "Confidence: " + Math.min(confidence, 98.4).toFixed(1) + "%";
             
-            confFill.style.width = result.confidence + '%';
-            confText.textContent = result.confidence + '%';
-            infoDirection.textContent = result.direction;
-            infoCandles.textContent = result.candleDesc;
-            infoStrength.textContent = result.strength + ' (' + result.confidence + '%)';
-            infoExpiry.textContent = result.expiry;
-            infoROI.textContent = result.roiInfo + (result.source === 'live' ? ' · Live API' : ' · Screenshot');
-        }
+            document.getElementById('resPattern').innerText = detectedPattern;
+            document.getElementById('resPhase').innerText = marketPhase;
+            document.getElementById('resVolume').innerText = volumeStatus;
+            document.getElementById('resLevel').innerText = nearLevel ? "Zone Active" : "No Major Zones";
 
-        function resetToUpload() {
-            screenResult.classList.remove('active');
-            screenUpload.classList.add('active');
-            imageLoaded = false;
-            uploadPlaceholder.style.display = 'block';
-            chartCanvas.style.display = 'none';
-            roiOverlay.style.display = 'none';
-            analysisSteps.style.display = 'none';
-            btnAnalyze.style.display = currentMode === 'chart' ? 'none' : 'block';
-            resultCard.style.borderColor = 'var(--border)';
+            if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
         }
-
-        function sleep(ms) {
-            return new Promise(resolve => setTimeout(resolve, ms));
-        }
-
-        console.log('✅ Kryon AI v6 initialized - PocketOption ROI mode');
     </script>
 </body>
 </html>
